@@ -38,9 +38,9 @@ export default function Home() {
             </p>
             <div className="mt-10 flex items-center gap-4 flex-wrap">
               <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Trending:</span>
-              <span className="px-4 py-1.5 bg-slate-200/60 hover:bg-slate-200 text-slate-700 rounded-full text-sm font-medium transition-colors cursor-pointer">Electronics</span>
-              <span className="px-4 py-1.5 bg-slate-200/60 hover:bg-slate-200 text-slate-700 rounded-full text-sm font-medium transition-colors cursor-pointer">Fashion</span>
-              <span className="px-4 py-1.5 bg-slate-200/60 hover:bg-slate-200 text-slate-700 rounded-full text-sm font-medium transition-colors cursor-pointer">Home Decor</span>
+              <Link href="/products?category=Electronics" className="px-4 py-1.5 bg-slate-200/60 hover:bg-slate-200 text-slate-700 rounded-full text-sm font-medium transition-colors cursor-pointer">Electronics</Link>
+              <Link href="/products?category=Fashion%20%26%20Apparel" className="px-4 py-1.5 bg-slate-200/60 hover:bg-slate-200 text-slate-700 rounded-full text-sm font-medium transition-colors cursor-pointer">Fashion</Link>
+              <Link href="/products?category=Home%20%26%20Garden" className="px-4 py-1.5 bg-slate-200/60 hover:bg-slate-200 text-slate-700 rounded-full text-sm font-medium transition-colors cursor-pointer">Home Decor</Link>
             </div>
           </div>
 
@@ -78,7 +78,7 @@ export default function Home() {
               </div>
               <div className="p-4 flex flex-col flex-grow">
                 <span className="text-xs font-semibold text-slate-400 mb-1">{product.store}</span>
-                <Link href={`/products/${product.id}`} className="text-sm font-bold text-slate-900 hover:text-blue-700 line-clamp-2 mb-2">
+                <Link href="/products" className="text-sm font-bold text-slate-900 hover:text-blue-700 line-clamp-2 mb-2">
                   {product.name}
                 </Link>
                 <div className="mt-auto flex items-center justify-between">

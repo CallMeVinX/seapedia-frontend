@@ -3,13 +3,31 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { Search, ShoppingCart, LogOut, Settings, ArrowLeftRight, ChevronDown } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/hooks/useAuthStore';
 import Button from './Button';
 
 export const Navbar = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, logout, activeRole, ownedRoles } = useAuthStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('search') || '');
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Sync state if query param changes externally
+  useEffect(() => {
+    setSearchQuery(searchParams.get('search') || '');
+  }, [searchParams]);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      router.push(`/products?search=${encodeURIComponent(searchQuery.trim())}`);
+    } else {
+      router.push('/products');
+    }
+  };
 
   // Handle click outside to close dropdown
   useEffect(() => {
@@ -91,18 +109,20 @@ export const Navbar = () => {
           </div>
 
           {/* Search Bar - Optional UI component */}
-          <div className="flex-1 max-w-xl hidden lg:flex mx-4">
+          <form onSubmit={handleSearchSubmit} className="flex-1 max-w-xl hidden lg:flex mx-4">
             <div className="relative w-full">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="h-5 w-5 text-slate-400" />
               </div>
               <input
                 type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
                 className="block w-full pl-10 pr-3 py-2 border border-slate-300 rounded-full leading-5 bg-slate-50 placeholder-slate-400 focus:outline-none focus:bg-white focus:ring-2 focus:ring-blue-600 focus:border-transparent sm:text-sm transition-all"
                 placeholder="Search across all stores..."
               />
             </div>
-          </div>
+          </form>
 
           {/* Right Actions */}
           <div className="flex items-center gap-4 shrink-0">
