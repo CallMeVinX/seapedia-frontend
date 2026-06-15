@@ -8,6 +8,9 @@ import CheckboxField from "@/components/ui/CheckboxField";
 import Button from "@/components/ui/Button";
 import { validateField } from "@/utils/validation";
 
+import { useRouter } from "next/navigation";
+import { useAuthStore } from "@/hooks/useAuthStore";
+
 interface LoginFormState {
   email: string;
   password: string;
@@ -15,6 +18,8 @@ interface LoginFormState {
 }
 
 export default function LoginForm() {
+  const router = useRouter();
+  const { login } = useAuthStore();
   const [showPassword, setShowPassword] = useState(false);
   const [form, setForm] = useState<LoginFormState>({
     email: "",
@@ -71,12 +76,29 @@ export default function LoginForm() {
     setIsSubmitting(true);
 
     try {
-      // TODO: integrate with auth endpoint, e.g.:
-      // await fetch("/api/auth/login", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify(form),
-      // });
+      // MOCK LOGIN IMPLEMENTATION FOR TESTING
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      const mockUser = {
+        id: "u123",
+        name: form.email.split("@")[0].toUpperCase(),
+        email: form.email,
+      };
+      
+      // Determine roles dynamically based on email prefix so user can test all UIs
+      type Role = 'buyer' | 'seller' | 'driver' | 'admin';
+      let roles: Role[] = ['buyer']; // Default
+      
+      if (form.email.includes("seller")) roles = ['seller'];
+      else if (form.email.includes("driver")) roles = ['driver'];
+      else if (form.email.includes("admin")) roles = ['admin'];
+      else if (form.email.includes("multi")) roles = ['buyer', 'seller']; // To test switch role
+      
+      login(mockUser, "mock-jwt-token-123", roles);
+      
+      // Redirect to home so they can see the Navbar change!
+      router.push("/");
+
     } finally {
       setIsSubmitting(false);
     }

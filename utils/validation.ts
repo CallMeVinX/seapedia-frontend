@@ -39,7 +39,7 @@ export function validateAgree(agree: boolean | string): string {
  * Generic field validator wrapper for auth forms.
  * Pass the full form object as context for confirmPassword matching.
  */
-export function validateField(name: string, value: string, context?: any): string {
+export function validateField(name: string, value: string, context?: Record<string, string | boolean>): string {
   switch (name) {
     case "firstName":
       return validateFirstName(value);
@@ -50,7 +50,7 @@ export function validateField(name: string, value: string, context?: any): strin
     case "password":
       return validatePassword(value);
     case "confirmPassword":
-      return validateConfirmPassword(value, context?.password || "");
+      return validateConfirmPassword(value, typeof context?.password === "string" ? context.password : "");
     case "agree":
       return validateAgree(value);
     default:

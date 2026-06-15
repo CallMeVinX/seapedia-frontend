@@ -11,6 +11,7 @@ import { validateField } from "@/utils/validation";
 import { TERMS_CONTENT, PRIVACY_CONTENT } from "./authContent";
 
 interface RegisterFormState {
+  [key: string]: string | boolean;
   firstName: string;
   lastName: string;
   email: string;
@@ -43,7 +44,7 @@ export default function RegisterForm() {
   function handleBlur(e: FocusEvent<HTMLInputElement>) {
     const { name, value } = e.target;
     setTouched((prev) => ({ ...prev, [name]: true }));
-    const errorMsg = validateField(name, value);
+    const errorMsg = validateField(name, value, form);
     setErrors((prev) => ({ ...prev, [name]: errorMsg }));
   }
 
@@ -79,7 +80,7 @@ export default function RegisterForm() {
 
     fieldsToValidate.forEach((field) => {
       const val = form[field as keyof RegisterFormState];
-      newErrors[field] = validateField(field, typeof val === "boolean" ? (val ? "true" : "false") : val);
+      newErrors[field] = validateField(field, typeof val === "boolean" ? (val ? "true" : "false") : val, form);
       newTouched[field] = true;
     });
 
