@@ -9,6 +9,8 @@ export const metadata: Metadata = {
   description: "Shop millions of products from thousands of verified sellers.",
 };
 
+import { Toaster } from "react-hot-toast";
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -18,6 +20,7 @@ export default function RootLayout({
     <html lang="en" className="h-full antialiased">
       <body className={`${inter.className} min-h-full flex flex-col bg-slate-50 text-slate-900`}>
         {children}
+        <Toaster />
       </body>
     </html>
   );
