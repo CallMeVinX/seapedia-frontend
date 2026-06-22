@@ -3,104 +3,11 @@
 import { useState, useMemo, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Image from 'next/image';
+import Link from 'next/link';
 import { Card } from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import { Store, ChevronRight, ChevronLeft, SlidersHorizontal, X } from 'lucide-react';
-
-// --- MOCK PRODUCTS DATA ---
-const ALL_MOCK_PRODUCTS = [
-  {
-    id: 'p1',
-    name: 'Premium Over-Ear Noise Cancelling Headphones',
-    price: 299.00,
-    store: 'TechHaven',
-    category: 'Electronics',
-    isVerified: true,
-    image: '/tech_store.png',
-  },
-  {
-    id: 'p2',
-    name: 'Minimalist Smartwatch Series 5 - Aluminum',
-    price: 199.99,
-    store: 'TechHaven',
-    category: 'Electronics',
-    isVerified: true,
-    image: '/luxe_living.png',
-  },
-  {
-    id: 'p3',
-    name: 'Classic Italian Leather Tote Bag - Caramel',
-    price: 145.00,
-    store: 'Boutique Minimal',
-    category: 'Fashion & Apparel',
-    isVerified: true,
-    image: '/urban_wear.png',
-  },
-  {
-    id: 'p4',
-    name: 'Pro-Elite Lightweight Running Sneakers - Red',
-    price: 120.00,
-    store: 'Global Goods Direct',
-    category: 'Fashion & Apparel',
-    isVerified: true,
-    image: '/kickz_kulture.png',
-  },
-  {
-    id: 'p5',
-    name: 'Executive Edition Smartwatch - Steel',
-    price: 349.00,
-    store: 'TechHaven',
-    category: 'Electronics',
-    isVerified: true,
-    image: '/luxe_living.png',
-  },
-  {
-    id: 'p6',
-    name: 'Ultra-Slim 14" Pro Laptop - 16GB RAM',
-    price: 1199.00,
-    store: 'TechHaven',
-    category: 'Electronics',
-    isVerified: true,
-    image: '/tech_store.png',
-  },
-  // Additional items for robust filtering/sorting/pagination
-  {
-    id: 'p7',
-    name: 'Ergonomic Office Chair',
-    price: 249.99,
-    store: 'Luxe Living',
-    category: 'Home & Garden',
-    isVerified: false,
-    image: '/luxe_living.png',
-  },
-  {
-    id: 'p8',
-    name: 'Water-Resistant Mountain Jacket',
-    price: 89.99,
-    store: 'Urban Wear',
-    category: 'Sports & Outdoors',
-    isVerified: false,
-    image: '/urban_wear.png',
-  },
-  {
-    id: 'p9',
-    name: 'Mechanical Gaming Keyboard',
-    price: 129.50,
-    store: 'TechHaven',
-    category: 'Electronics',
-    isVerified: true,
-    image: '/tech_store.png',
-  },
-  {
-    id: 'p10',
-    name: 'Cozy Wool Blend Throw Blanket',
-    price: 59.00,
-    store: 'Boutique Minimal',
-    category: 'Home & Garden',
-    isVerified: true,
-    image: '/luxe_living.png',
-  },
-];
+import { productService, Product } from '@/services/productService';
 
 const ITEMS_PER_PAGE = 6;
 
@@ -112,7 +19,11 @@ function ProductsContent() {
   const initialCategory = searchParams.get('category') || '';
   const initialSearch = searchParams.get('search') || '';
 
-  // State
+  // Data State
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [isDataLoading, setIsDataLoading] = useState(true);
+
+  // Filter State
   const [searchQuery, setSearchQuery] = useState(initialSearch);
   const [selectedCategories, setSelectedCategories] = useState<string[]>(
     initialCategory ? [initialCategory] : []
@@ -125,6 +36,23 @@ function ProductsContent() {
   const [sortBy, setSortBy] = useState<string>('recommended');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+
+  // Fetch Products
+  useEffect(() => {
+    let isMounted = true;
+    const fetchProducts = async () => {
+      try {
+        const data = await productService.getProducts();
+        if (isMounted) setAllProducts(data);
+      } catch (error) {
+        console.error('Failed to fetch products', error);
+      } finally {
+        if (isMounted) setIsDataLoading(false);
+      }
+    };
+    fetchProducts();
+    return () => { isMounted = false; };
+  }, []);
 
   // Sync state with search params changes (e.g. from navbar or trending clicks)
   useEffect(() => {
@@ -140,8 +68,19 @@ function ProductsContent() {
   }, [searchParams]);
 
   // Categories and Stores list
-  const categoriesList = ['Electronics', 'Fashion & Apparel', 'Home & Garden', 'Sports & Outdoors'];
-  const storesList = ['TechHaven', 'Global Goods Direct', 'Boutique Minimal'];
+  const categoriesList = [
+    'Fresh Seafood & Meats',
+    'Fresh Produce & Groceries',
+    'Local Culinary & Snacks',
+    'Electronics & Gadgets',
+    'Fashion & Apparel',
+    'Health & Personal Care',
+    'Home & Living',
+    'Sports & Outdoors',
+    'Automotive Parts & Accessories',
+    'Others & General Items'
+  ];
+  const storesList = ["Budi's Fresh Market", 'Toko Hijau Makmur', 'Snack Lokal Nusantara'];
 
   // Handle Category Toggle
   const handleCategoryToggle = (category: string) => {
@@ -169,26 +108,26 @@ function ProductsContent() {
 
   // Filtering & Sorting Logic
   const filteredProducts = useMemo(() => {
-    return ALL_MOCK_PRODUCTS.filter((product) => {
+    return allProducts.filter((product) => {
       // Search query matching
       if (
         searchQuery &&
         !product.name.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        !product.store.toLowerCase().includes(searchQuery.toLowerCase())
+        !product.store_name.toLowerCase().includes(searchQuery.toLowerCase())
       ) {
         return false;
       }
 
       // Categories matching
-      if (selectedCategories.length > 0 && !selectedCategories.includes(product.category)) {
+      if (selectedCategories.length > 0 && !selectedCategories.includes(product.category_name)) {
         return false;
       }
-
+      
       // Store matching
-      if (selectedStores.length > 0 && !selectedStores.includes(product.store)) {
+      if (selectedStores.length > 0 && !selectedStores.includes(product.store_name)) {
         return false;
       }
-
+      
       // Price matching
       if (appliedMinPrice !== null && product.price < appliedMinPrice) {
         return false;
@@ -208,7 +147,7 @@ function ProductsContent() {
       // default / recommended
       return 0;
     });
-  }, [searchQuery, selectedCategories, selectedStores, appliedMinPrice, appliedMaxPrice, sortBy]);
+  }, [allProducts, searchQuery, selectedCategories, selectedStores, appliedMinPrice, appliedMaxPrice, sortBy]);
 
   // Pagination calculation
   const totalItems = filteredProducts.length;
@@ -229,16 +168,16 @@ function ProductsContent() {
     <div className="bg-slate-50 min-h-screen">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         
-        {/* Mobile Filter Toggle Button */}
-        <div className="flex lg:hidden items-center justify-between mb-4">
+        {/* Mobile Header */}
+        <div className="flex items-center justify-between lg:hidden mb-6 gap-4">
           <Button
             variant="secondary"
             onClick={() => setMobileFiltersOpen(true)}
-            className="flex items-center gap-2 text-sm font-semibold"
+            className="w-auto flex items-center gap-2 text-sm font-semibold shrink-0"
           >
             <SlidersHorizontal className="h-4 w-4" /> Filters
           </Button>
-          <span className="text-sm text-slate-500">
+          <span className="text-sm text-slate-500 shrink-0">
             {totalItems} {totalItems === 1 ? 'result' : 'results'} found
           </span>
         </div>
@@ -358,21 +297,22 @@ function ProductsContent() {
                     className="border border-slate-200/60 bg-white rounded-2xl overflow-hidden flex flex-col group h-full shadow-sm hover:shadow-lg transition-all"
                   >
                     {/* Image Area with Store Badge */}
-                    <div className="relative aspect-square w-full bg-slate-50 overflow-hidden">
+                    <Link href={`/products/${product.id}`} className="block relative aspect-square w-full bg-slate-50 overflow-hidden">
                       <Image
-                        src={product.image}
+                        src={product.image_url || '/tech_store.png'}
                         alt={product.name}
                         fill
+                        unoptimized
                         className="object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                       {/* Store Badge overlay */}
                       <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-md border border-slate-100 rounded-full px-2.5 py-1 flex items-center gap-1.5 shadow-sm">
-                        <Store className="w-3.5 h-3.5 text-orange-600" />
-                        <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wide">
-                          {product.store}
+                        <Store className="w-3.5 h-3.5 text-orange-600 shrink-0" />
+                        <span className="text-[10px] font-bold text-slate-700 uppercase tracking-wide truncate max-w-[100px] sm:max-w-[120px]" title={product.store_name}>
+                          {product.store_name}
                         </span>
                       </div>
-                    </div>
+                    </Link>
 
                     {/* Description Details */}
                     <div className="p-5 flex flex-col flex-grow">
@@ -380,15 +320,17 @@ function ProductsContent() {
                         {product.name}
                       </h4>
                       <p className="text-xl font-extrabold text-slate-900 mb-5">
-                        ${product.price.toFixed(2)}
+                        {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(Number(product.price))}
                       </p>
                       
-                      <Button
-                        variant="secondary"
-                        className="w-full mt-auto text-xs py-2.5 font-bold tracking-wide uppercase border border-slate-200 hover:bg-slate-50 transition-colors"
-                      >
-                        View Details
-                      </Button>
+                      <Link href={`/products/${product.id}`}>
+                        <Button
+                          variant="secondary"
+                          className="w-full mt-auto text-xs py-2.5 font-bold tracking-wide uppercase border border-slate-200 hover:bg-slate-50 transition-colors"
+                        >
+                          View Details
+                        </Button>
+                      </Link>
                     </div>
                   </Card>
                 ))}

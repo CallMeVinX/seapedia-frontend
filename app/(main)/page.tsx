@@ -2,24 +2,33 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, ShoppingCart } from "lucide-react";
 import { Card } from "@/components/ui/Card";
+import HomeProductCard from "@/components/product/HomeProductCard";
 import { ReviewCard, Review } from "@/components/ui/ReviewCard";
 import { ReviewForm } from "@/components/ui/ReviewForm";
 
-// --- MOCK DATA ---
-const mockProducts = [
-  { id: "1", name: "Sony WH-1000XM5 Headphones", price: "$348.00", store: "TechHub Premium", image: "/tech_store.png" },
-  { id: "2", name: "Minimalist Desk Lamp", price: "$45.99", store: "Luxe Living", image: "/luxe_living.png" },
-  { id: "3", name: "Nike Air Max 270", price: "$150.00", store: "Kickz Kulture", image: "/kickz_kulture.png" },
-  { id: "4", name: "Oversized Cotton Tee", price: "$25.00", store: "Urban Wear", image: "/urban_wear.png" },
-];
-
+// --- MOCK REVIEWS DATA ---
 const mockReviews: Review[] = [
   { id: "r1", reviewerName: "Sarah Jenkins", rating: 5, date: "Oct 12, 2026", comment: "Absolutely love the fast shipping. The fact that I can buy from multiple sellers in one checkout is a game changer." },
   { id: "r2", reviewerName: "Michael Chang", rating: 4, date: "Oct 10, 2026", comment: "Great UI and very responsive customer support. Had an issue with a voucher but it was resolved instantly." },
   { id: "r3", reviewerName: "Elena Rodriguez", rating: 5, date: "Oct 08, 2026", comment: "I became a seller last month and the dashboard is incredibly intuitive. Revenue tracking is spot on." },
 ];
 
-export default function Home() {
+async function getProducts() {
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products`, { cache: 'no-store' });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (error) {
+    console.error("Failed to fetch products", error);
+    return [];
+  }
+}
+
+export default async function Home() {
+  const products = await getProducts();
+  // Display only top 4 products for the homepage
+  const displayProducts = products.slice(0, 4);
+
   return (
     <div className="flex flex-col bg-slate-50 font-sans w-full pb-20">
       
@@ -38,9 +47,9 @@ export default function Home() {
             </p>
             <div className="mt-10 flex items-center gap-4 flex-wrap">
               <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Trending:</span>
-              <Link href="/products?category=Electronics" className="px-4 py-1.5 bg-slate-200/60 hover:bg-slate-200 text-slate-700 rounded-full text-sm font-medium transition-colors cursor-pointer">Electronics</Link>
+              <Link href="/products?category=Fresh%20Seafood%20%26%20Meats" className="px-4 py-1.5 bg-slate-200/60 hover:bg-slate-200 text-slate-700 rounded-full text-sm font-medium transition-colors cursor-pointer">Seafood & Meats</Link>
+              <Link href="/products?category=Electronics%20%26%20Gadgets" className="px-4 py-1.5 bg-slate-200/60 hover:bg-slate-200 text-slate-700 rounded-full text-sm font-medium transition-colors cursor-pointer">Electronics</Link>
               <Link href="/products?category=Fashion%20%26%20Apparel" className="px-4 py-1.5 bg-slate-200/60 hover:bg-slate-200 text-slate-700 rounded-full text-sm font-medium transition-colors cursor-pointer">Fashion</Link>
-              <Link href="/products?category=Home%20%26%20Garden" className="px-4 py-1.5 bg-slate-200/60 hover:bg-slate-200 text-slate-700 rounded-full text-sm font-medium transition-colors cursor-pointer">Home Decor</Link>
             </div>
           </div>
 
@@ -70,27 +79,17 @@ export default function Home() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-          {mockProducts.map((product) => (
-            <Card key={product.id} hoverable className="group border-0 shadow-sm hover:shadow-xl transition-all rounded-2xl overflow-hidden flex flex-col bg-white">
-              <div className="relative w-full aspect-square bg-slate-100 overflow-hidden">
-                <Image src={product.image} alt={product.name} fill className="object-cover group-hover:scale-105 transition-transform duration-500" />
-              </div>
-              <div className="p-4 flex flex-col flex-grow">
-                <span className="text-xs font-semibold text-slate-400 mb-1">{product.store}</span>
-                <Link href="/products" className="text-sm font-bold text-slate-900 hover:text-blue-700 line-clamp-2 mb-2">
-                  {product.name}
-                </Link>
-                <div className="mt-auto flex items-center justify-between">
-                  <span className="text-lg font-extrabold text-slate-900">{product.price}</span>
-                  <Link href="/login" className="w-8 h-8 rounded-full bg-slate-100 hover:bg-blue-100 flex items-center justify-center text-slate-600 hover:text-blue-700 transition-colors">
-                    <ShoppingCart className="w-4 h-4" />
-                  </Link>
-                </div>
-              </div>
-            </Card>
-          ))}
-        </div>
+        {displayProducts.length > 0 ? (
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+            {displayProducts.map((product: any) => (
+              <HomeProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        ) : (
+          <div className="p-12 text-center text-slate-500 bg-white rounded-2xl border border-slate-200">
+            No products available right now.
+          </div>
+        )}
       </section>
 
       {/* 3. Application Reviews Section */}
