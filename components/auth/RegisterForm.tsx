@@ -7,7 +7,10 @@ import InputField from "@/components/ui/InputField";
 import CheckboxField from "@/components/ui/CheckboxField";
 import Button from "@/components/ui/Button";
 import Modal from "@/components/ui/Modal";
+import { useRouter } from "next/navigation";
 import { validateField } from "@/utils/validation";
+import { authService } from "@/services/authService";
+import { showToast } from "@/utils/toast";
 import { TERMS_CONTENT, PRIVACY_CONTENT } from "./authContent";
 
 interface RegisterFormState {
@@ -22,6 +25,7 @@ interface RegisterFormState {
 }
 
 export default function RegisterForm() {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isTermsOpen, setIsTermsOpen] = useState(false);
@@ -96,12 +100,20 @@ export default function RegisterForm() {
     setIsSubmitting(true);
 
     try {
-      // TODO: integrate with auth endpoint, e.g.:
-      // await fetch("/api/auth/register", {
-      //   method: "POST",
-      //   headers: { "Content-Type": "application/json" },
-      //   body: JSON.stringify(form),
-      // });
+      const fullName = `${form.firstName} ${form.lastName}`.trim();
+      // We are omitting the phone field in this API request since backend doesn't support it yet
+      await authService.register(fullName, form.email as string, form.password as string);
+      
+      showToast.success("Berhasil", "Registrasi akun berhasil!");
+      router.push("/login");
+    } catch (err: any) {
+      if (err.response?.data?.detail) {
+        setError(err.response.data.detail);
+        showToast.error("Gagal", err.response.data.detail);
+      } else {
+        setError("An unexpected error occurred during registration. Please try again.");
+        showToast.error("Gagal", "Terjadi kesalahan saat registrasi. Silakan coba lagi.");
+      }
     } finally {
       setIsSubmitting(false);
     }

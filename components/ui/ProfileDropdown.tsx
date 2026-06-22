@@ -1,0 +1,92 @@
+'use client';
+
+import { useState, useRef, useEffect } from 'react';
+import { useAuthStore } from '@/hooks/useAuthStore';
+import { ChevronDown, LogOut, Settings, Wallet, Package, MapPin } from 'lucide-react';
+import Link from 'next/link';
+import { RoleSwitcher } from './RoleSwitcher';
+import { showToast } from '@/utils/toast';
+
+export const ProfileDropdown = () => {
+  const { user, activeRole, logout } = useAuthStore();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setDropdownOpen(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  if (!user) return null;
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button 
+        onClick={() => setDropdownOpen(!dropdownOpen)}
+        className={`flex items-center gap-2 text-sm font-medium transition-all p-1.5 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${dropdownOpen ? 'bg-slate-100 text-blue-700' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}
+      >
+        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-700 to-blue-500 flex items-center justify-center text-white font-bold shadow-inner ring-2 ring-white">
+          {user.name.charAt(0).toUpperCase()}
+        </div>
+        <span className="hidden sm:block font-semibold tracking-tight pr-1">{user.name}</span>
+        <ChevronDown className={`h-4 w-4 mr-1 transition-transform duration-200 ${dropdownOpen ? 'rotate-180 text-blue-600' : 'text-slate-400'}`} />
+      </button>
+
+      {dropdownOpen && (
+        <div className="absolute right-0 mt-3 w-64 bg-white/95 backdrop-blur-xl border border-slate-200/60 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] py-2 z-50 transform origin-top-right transition-all ease-out duration-200 animate-in fade-in slide-in-from-top-2">
+          <div className="px-4 py-3 border-b border-slate-100/80 mb-1 flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-700 to-blue-500 flex items-center justify-center text-white font-bold shadow-sm shrink-0">
+              {user.name.charAt(0).toUpperCase()}
+            </div>
+            <div className="overflow-hidden">
+              <p className="text-sm font-bold text-slate-900 truncate">{user.name}</p>
+              <p className="text-[11px] font-medium text-slate-500 truncate">{user.email}</p>
+            </div>
+          </div>
+          
+          <div className="py-1">
+            {activeRole?.toLowerCase() === 'buyer' && (
+              <>
+                <Link href="/buyer/wallet" className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors">
+                  <Wallet className="h-4 w-4 text-slate-400" />
+                  Dompet
+                </Link>
+                <Link href="/buyer/orders" className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors">
+                  <Package className="h-4 w-4 text-slate-400" />
+                  Riwayat Pesanan
+                </Link>
+                <Link href="/buyer/address" className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors">
+                  <MapPin className="h-4 w-4 text-slate-400" />
+                  Pengaturan Alamat
+                </Link>
+                <div className="h-px bg-slate-100 my-1 mx-2"></div>
+              </>
+            )}
+            
+            <Link href="/profile" className="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors">
+              <Settings className="h-4 w-4 text-slate-400" />
+              Profile Settings
+            </Link>
+            
+            <button 
+              onClick={() => {
+                logout();
+                showToast.success("Berhasil", "Logout berhasil!");
+                setDropdownOpen(false);
+              }}
+              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-red-600 hover:bg-red-50/50 hover:text-red-700 transition-colors"
+            >
+              <LogOut className="h-4 w-4 text-red-500" />
+              Sign out
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};

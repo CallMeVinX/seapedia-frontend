@@ -10,6 +10,8 @@ import { validateField } from "@/utils/validation";
 
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/hooks/useAuthStore";
+import { authService } from "@/services/authService";
+import { showToast } from "@/utils/toast";
 
 interface LoginFormState {
   email: string;
@@ -28,6 +30,7 @@ export default function LoginForm() {
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [touched, setTouched] = useState<Record<string, boolean>>({});
+  const [apiError, setApiError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   function handleBlur(e: FocusEvent<HTMLInputElement>) {
@@ -74,31 +77,37 @@ export default function LoginForm() {
     }
 
     setIsSubmitting(true);
+    setApiError(null);
 
     try {
-      // MOCK LOGIN IMPLEMENTATION FOR TESTING
-      await new Promise(resolve => setTimeout(resolve, 800));
+      const response = await authService.login(form.email, form.password, form.remember);
       
-      const mockUser = {
-        id: "u123",
-        name: form.email.split("@")[0].toUpperCase(),
-        email: form.email,
+      // Fetch user details including roles
+      const userMe = await authService.getMe(response.access_token);
+      
+      const loggedUser = {
+        id: userMe.id,
+        name: userMe.full_name,
+        email: userMe.email,
       };
       
-      // Determine roles dynamically based on email prefix so user can test all UIs
-      type Role = 'buyer' | 'seller' | 'driver' | 'admin';
-      let roles: Role[] = ['buyer']; // Default
+      const roles = userMe.roles as any[];
       
-      if (form.email.includes("seller")) roles = ['seller'];
-      else if (form.email.includes("driver")) roles = ['driver'];
-      else if (form.email.includes("admin")) roles = ['admin'];
-      else if (form.email.includes("multi")) roles = ['buyer', 'seller']; // To test switch role
+      login(loggedUser, response.access_token, roles);
       
-      login(mockUser, "mock-jwt-token-123", roles);
+      showToast.success("Berhasil", "Login berhasil!");
       
       // Redirect to home so they can see the Navbar change!
       router.push("/");
 
+    } catch (err: any) {
+      if (err.response?.data?.detail) {
+        setApiError(err.response.data.detail);
+        showToast.error("Gagal", err.response.data.detail);
+      } else {
+        setApiError("An unexpected error occurred. Please try again.");
+        showToast.error("Gagal", "Terjadi kesalahan yang tidak terduga.");
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -112,6 +121,12 @@ export default function LoginForm() {
           Log in to discover amazing deals and shop your favorite products.
         </p>
       </div>
+
+      {apiError && (
+        <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
+          {apiError}
+        </p>
+      )}
 
       <InputField
         id="email"
