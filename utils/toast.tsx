@@ -31,7 +31,7 @@ export const showToast = {
           </div>
         </div>
       ),
-      { duration: 4000, position: 'bottom-center' }
+      { duration: 4000, position: 'bottom-right' }
     );
   },
   
@@ -64,7 +64,7 @@ export const showToast = {
           </div>
         </div>
       ),
-      { duration: 4000, position: 'bottom-center' }
+      { duration: 4000, position: 'bottom-right' }
     );
   }
 };

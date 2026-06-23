@@ -12,7 +12,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function HomeProductCard({ product }: { product: any }) {
-  const { token, user, activeRole } = useAuthStore();
+  const { user, activeRole } = useAuthStore();
   const { fetchCartCount } = useCartStore();
   const router = useRouter();
   const [isAdding, setIsAdding] = useState(false);
@@ -21,7 +21,7 @@ export default function HomeProductCard({ product }: { product: any }) {
     e.preventDefault();
     e.stopPropagation();
 
-    if (!token || !user) {
+    if (!user) {
       showToast.error("Gagal", "Silakan login terlebih dahulu untuk menambah ke keranjang.");
       router.push("/login");
       return;

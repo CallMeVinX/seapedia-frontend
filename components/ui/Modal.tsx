@@ -9,9 +9,10 @@ interface ModalProps {
   onClose: () => void;
   title: string;
   children: React.ReactNode;
+  footer?: React.ReactNode;
 }
 
-export default function Modal({ isOpen, onClose, title, children }: ModalProps) {
+export default function Modal({ isOpen, onClose, title, children, footer }: ModalProps) {
   const modalRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
 
@@ -109,12 +110,14 @@ export default function Modal({ isOpen, onClose, title, children }: ModalProps) 
 
         {/* Footer */}
         <div className="flex justify-end px-6 py-4 border-t border-gray-100 bg-gray-50">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-white bg-seapedia-navy hover:bg-seapedia-navy-light rounded-lg transition-colors shadow-sm cursor-pointer focus:ring-2 focus:ring-seapedia-navy focus:outline-none"
-          >
-            Close
-          </button>
+          {footer ? footer : (
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-medium text-white bg-seapedia-navy hover:bg-seapedia-navy-light rounded-lg transition-colors shadow-sm cursor-pointer focus:ring-2 focus:ring-seapedia-navy focus:outline-none"
+            >
+              Close
+            </button>
+          )}
         </div>
       </div>
     </div>,
