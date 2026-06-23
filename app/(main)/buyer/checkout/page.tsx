@@ -181,7 +181,7 @@ function CheckoutContent() {
                           {selectedAddressId === addr.id && <div className="w-2 h-2 rounded-full bg-blue-600" />}
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-slate-900">{user?.full_name}</p>
+                          <p className="text-sm font-medium text-slate-900">{user?.name}</p>
                           <p className="text-sm text-slate-600 mt-1">{addr.full_address}</p>
                         </div>
                       </div>
@@ -211,7 +211,7 @@ function CheckoutContent() {
                   />
                   <div className="flex gap-2 mt-3">
                     <Button variant="primary" className="py-2 px-4 text-sm" onClick={handleAddAddress}>Simpan</Button>
-                    <Button variant="outline" className="py-2 px-4 text-sm" onClick={() => {
+                    <Button variant="secondary" className="py-2 px-4 text-sm" onClick={() => {
                       setIsAddingAddress(false);
                       setNewAddressText("");
                     }}>Batal</Button>

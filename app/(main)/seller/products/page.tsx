@@ -9,6 +9,7 @@ import { ConfirmModal } from '@/components/ui/ConfirmModal';
 import { Package, Plus } from 'lucide-react';
 
 import { useState } from 'react';
+import { SellerProductResponse } from '@/services/sellerProductService';
 
 export default function SellerProductsPage() {
   const { } = useAuthStore();

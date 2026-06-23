@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-type Role = 'buyer' | 'seller' | 'driver' | 'admin';
+type Role = 'buyer' | 'seller' | 'driver' | 'admin' | 'BUYER' | 'SELLER' | 'DRIVER' | 'ADMIN';
 
 interface User {
   id: string;
