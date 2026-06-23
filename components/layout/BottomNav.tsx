@@ -5,9 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Search, Truck, History } from 'lucide-react';
 
 const DRIVER_NAVIGATION = [
-  { name: 'Cari Pekerjaan', href: '/driver/jobs', icon: Search },
-  { name: 'Tugas Aktif', href: '/driver/tasks', icon: Truck },
-  { name: 'Riwayat', href: '/driver/history', icon: History },
+  { name: 'Dashboard', href: '/driver/dashboard', icon: Truck },
 ];
 
 export const BottomNav = () => {

@@ -3,8 +3,6 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { useAuthStore } from '@/hooks/useAuthStore';
 import { GuestBuyerLayout } from './GuestBuyerLayout';
-import { SellerAdminLayout } from './SellerAdminLayout';
-import { DriverLayout } from './DriverLayout';
 import { RoleSelectionModal } from '@/components/ui/RoleSelectionModal';
 
 export const RoleBasedLayout = ({ children }: { children: ReactNode }) => {
@@ -30,12 +28,14 @@ export const RoleBasedLayout = ({ children }: { children: ReactNode }) => {
 
   const renderLayout = () => {
     const role = activeRole?.toLowerCase();
+    
+    // For specific roles, we let the nested layouts (e.g., app/(main)/seller/layout.tsx) handle the UI wrapper.
+    // If we're on buyer or guest, we wrap with GuestBuyerLayout.
     switch (role) {
       case 'seller':
       case 'admin':
-        return <SellerAdminLayout>{children}</SellerAdminLayout>;
       case 'driver':
-        return <DriverLayout>{children}</DriverLayout>;
+        return <>{children}</>;
       case 'buyer':
       default:
         // Includes 'buyer' and guest (null or undefined)

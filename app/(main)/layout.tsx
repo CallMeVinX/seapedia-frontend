@@ -1,5 +1,4 @@
-import { GuestBuyerLayout } from "@/components/layout/GuestBuyerLayout";
-import { RoleSelectionModal } from "@/components/ui/RoleSelectionModal";
+import { RoleBasedLayout } from "@/components/layout/RoleBasedLayout";
 
 export default function MainLayout({
   children,
@@ -7,11 +6,8 @@ export default function MainLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <>
-      <GuestBuyerLayout>
-        {children}
-      </GuestBuyerLayout>
-      <RoleSelectionModal />
-    </>
+    <RoleBasedLayout>
+      {children}
+    </RoleBasedLayout>
   );
 }

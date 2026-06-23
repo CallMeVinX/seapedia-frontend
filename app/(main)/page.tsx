@@ -15,7 +15,10 @@ const mockReviews: Review[] = [
 
 async function getProducts() {
   try {
-    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products`, { cache: 'no-store' });
+    // Implement Incremental Static Regeneration (ISR) to cache products for 60 seconds
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/products`, { 
+      next: { revalidate: 60 } 
+    });
     if (!res.ok) return [];
     return await res.json();
   } catch (error) {
@@ -54,7 +57,7 @@ export default async function Home() {
           </div>
 
           <div className="relative w-full aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl bg-white/50 backdrop-blur-sm border border-white/40">
-            <Image src="/hero.png" alt="3D Marketplace Concept" fill className="object-cover" priority />
+            <Image src="/hero.png" alt="3D Marketplace Concept" fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" priority />
             <div className="absolute bottom-6 right-6 bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl shadow-lg border border-white flex items-center gap-3">
               <div className="flex -space-x-2">
                 <div className="w-8 h-8 rounded-full bg-blue-900 border-2 border-white"></div>

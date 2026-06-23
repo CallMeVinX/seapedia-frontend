@@ -32,9 +32,8 @@ export const authService = {
     return response.data;
   },
 
-  getMe: async (token?: string): Promise<UserProfileResponse> => {
-    const headers = token ? { Authorization: `Bearer ${token}` } : {};
-    const response = await api.get<UserProfileResponse>('/users/me', { headers });
+  getMe: async (): Promise<UserProfileResponse> => {
+    const response = await api.get<UserProfileResponse>('/users/me');
     return response.data;
   },
 
@@ -62,9 +61,18 @@ export const authService = {
     return response.data;
   },
 
-  selectRole: async (role: string, token: string): Promise<LoginResponse> => {
-    const headers = { Authorization: `Bearer ${token}` };
-    const response = await api.post<LoginResponse>('/auth/select-role', { chosen_role: role }, { headers });
+  selectRole: async (role: string): Promise<LoginResponse> => {
+    const response = await api.post<LoginResponse>('/auth/select-role', { chosen_role: role });
+    return response.data;
+  },
+
+  addRole: async (role: string): Promise<{ message: string }> => {
+    const response = await api.post<{ message: string }>('/auth/add-role', { role });
+    return response.data;
+  },
+  
+  logout: async (): Promise<{ message: string }> => {
+    const response = await api.post<{ message: string }>('/auth/logout');
     return response.data;
   },
 };

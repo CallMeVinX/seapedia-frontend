@@ -83,7 +83,7 @@ export default function LoginForm() {
       const response = await authService.login(form.email, form.password, form.remember);
       
       // Fetch user details including roles
-      const userMe = await authService.getMe(response.access_token);
+      const userMe = await authService.getMe();
       
       const loggedUser = {
         id: userMe.id,
@@ -93,7 +93,12 @@ export default function LoginForm() {
       
       const roles = userMe.roles as any[];
       
-      login(loggedUser, response.access_token, roles);
+      // If user only has 1 role, automatically select it so the token gets the active_role claim
+      if (roles.length === 1) {
+        await authService.selectRole(roles[0]);
+      }
+      
+      login(loggedUser, roles);
       
       showToast.success("Berhasil", "Login berhasil!");
       

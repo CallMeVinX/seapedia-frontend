@@ -11,30 +11,28 @@ interface User {
 
 interface AuthState {
   user: User | null;
-  token: string | null;
   ownedRoles: Role[];
   activeRole: Role | null;
   isRoleModalOpen: boolean;
   
-  login: (user: User, token: string, roles: Role[]) => void;
+  login: (user: User, roles: Role[]) => void;
   logout: () => void;
-  setActiveRole: (role: Role, token?: string) => void;
+  setActiveRole: (role: Role) => void;
   setRoleModalOpen: (isOpen: boolean) => void;
+  addOwnedRole: (role: Role) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       user: null,
-      token: null,
       ownedRoles: [],
       activeRole: null,
       isRoleModalOpen: false,
 
-      login: (user, token, roles) => 
+      login: (user, roles) => 
         set({ 
           user, 
-          token, 
           ownedRoles: roles,
           activeRole: roles.length === 1 ? roles[0] : null,
           isRoleModalOpen: roles.length > 1
@@ -43,24 +41,37 @@ export const useAuthStore = create<AuthState>()(
       logout: () => 
         set({ 
           user: null, 
-          token: null, 
           ownedRoles: [], 
           activeRole: null,
           isRoleModalOpen: false
         }),
 
-      setActiveRole: (role, token) => 
-        set((state) => ({ 
+      setActiveRole: (role) => 
+        set(() => ({ 
           activeRole: role, 
-          isRoleModalOpen: false,
-          ...(token ? { token } : {})
+          isRoleModalOpen: false
         })),
 
       setRoleModalOpen: (isOpen) =>
         set({ isRoleModalOpen: isOpen }),
+        
+      addOwnedRole: (role) =>
+        set((state) => {
+          if (!state.ownedRoles.includes(role)) {
+            return { ownedRoles: [...state.ownedRoles, role] };
+          }
+          return {};
+        }),
     }),
     {
       name: 'auth-storage',
+      partialize: (state) => ({
+        user: state.user,
+        ownedRoles: state.ownedRoles,
+        activeRole: state.activeRole,
+        isRoleModalOpen: state.isRoleModalOpen,
+        // Omitting 'token' so it only stays in memory (Memory State)
+      }),
     }
   )
 );

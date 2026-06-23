@@ -7,7 +7,7 @@ import { authService } from '@/services/authService';
 import toast from 'react-hot-toast';
 
 export const RoleSelectionModal = () => {
-  const { user, token, ownedRoles, activeRole, setActiveRole, isRoleModalOpen, setRoleModalOpen } = useAuthStore();
+  const { user, ownedRoles, activeRole, setActiveRole, isRoleModalOpen, setRoleModalOpen } = useAuthStore();
   const router = useRouter();
 
   if (!isRoleModalOpen || !user) return null;
@@ -19,17 +19,13 @@ export const RoleSelectionModal = () => {
     const roleUpper = role.toUpperCase() as any;
     
     try {
-      if (token) {
-        const response = await authService.selectRole(roleUpper, token);
-        setActiveRole(roleUpper, response.access_token);
-      } else {
-        setActiveRole(roleUpper);
-      }
+      await authService.selectRole(roleUpper);
+      setActiveRole(roleUpper);
       setRoleModalOpen(false);
       
       switch (roleUpper) {
         case 'SELLER': router.push('/seller/dashboard'); break;
-        case 'DRIVER': router.push('/driver/jobs'); break;
+        case 'DRIVER': router.push('/driver/dashboard'); break;
         case 'ADMIN': router.push('/admin/monitoring'); break;
         case 'BUYER': router.push('/'); break;
       }
