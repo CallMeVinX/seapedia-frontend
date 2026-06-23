@@ -12,13 +12,13 @@ import { showToast } from "@/utils/toast";
 import { useState } from "react";
 
 export default function ProductPurchasePanel({ product }: { product: Product }) {
-  const { user, token } = useAuthStore();
+  const { user } = useAuthStore();
   const { fetchCartCount } = useCartStore();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
 
   const handleAddToCart = async () => {
-    if (!token) {
+    if (!user) {
       showToast.error("Gagal", 'Silakan login terlebih dahulu.');
       return;
     }
@@ -40,7 +40,7 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
   };
 
   const handleBuyNow = async () => {
-    if (!token) {
+    if (!user) {
       showToast.error("Gagal", 'Sesi telah berakhir. Silakan login kembali.');
       return;
     }
@@ -65,7 +65,7 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
         cart_item_ids: [addedItem.id],
         address_id: 1,
         delivery_method: 'REGULAR'
-      }, token);
+      });
       
       showToast.success("Berhasil", `Checkout berhasil! ID Pesanan: ${response.order_id}`);
       fetchCartCount(); // refresh count as item is removed

@@ -22,7 +22,7 @@ const DELIVERY_METHODS = [
 function CheckoutContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { token, user } = useAuthStore();
+  const { user } = useAuthStore();
   const { fetchCartCount } = useCartStore();
 
   const [cartItems, setCartItems] = useState<CartItemResponse[]>([]);
@@ -40,12 +40,12 @@ function CheckoutContent() {
     new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(value);
 
   useEffect(() => {
-    if (!token) {
+    if (!user) {
       router.push("/login");
       return;
     }
     loadData();
-  }, [token]);
+  }, [user]);
 
   const loadData = async () => {
     try {
@@ -70,7 +70,7 @@ function CheckoutContent() {
       setStoreName(selected[0].store_name);
 
       // 3. Fetch addresses
-      const addrData = await addressService.getAddresses(token!);
+      const addrData = await addressService.getAddresses();
       setAddresses(addrData);
       if (addrData.length > 0) {
         setSelectedAddressId(addrData[0].id);
@@ -86,7 +86,7 @@ function CheckoutContent() {
   const handleAddAddress = async () => {
     if (!newAddressText.trim()) return;
     try {
-      const added = await addressService.addAddress({ full_address: newAddressText }, token!);
+      const added = await addressService.addAddress({ full_address: newAddressText });
       setAddresses([...addresses, added]);
       setSelectedAddressId(added.id);
       setNewAddressText("");
@@ -109,14 +109,13 @@ function CheckoutContent() {
           cart_item_ids: cartItems.map(i => i.id),
           address_id: selectedAddressId,
           delivery_method: deliveryMethod,
-        },
-        token!
+        }
       );
 
       showToast.success("Berhasil", `Pesanan berhasil dibuat! Total: ${formatCurrency(response.final_total)}`);
       fetchCartCount();
       // Normally redirect to an order success page or order history
-      router.push("/buyer/dashboard");
+      router.push("/buyer/orders");
     } catch (error: any) {
       showToast.error("Gagal", error.response?.data?.detail || "Gagal membuat pesanan.");
     } finally {

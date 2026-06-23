@@ -18,9 +18,8 @@ export interface CheckoutResponse {
 }
 
 export const checkoutService = {
-  checkout: async (request: CheckoutRequest, token: string): Promise<CheckoutResponse> => {
-    const headers = { Authorization: `Bearer ${token}` };
-    const response = await api.post<CheckoutResponse>('/buyer/checkout', request, { headers });
+  checkout: async (request: CheckoutRequest): Promise<CheckoutResponse> => {
+    const response = await api.post<CheckoutResponse>('/buyer/checkout', request);
     return response.data;
   },
 };

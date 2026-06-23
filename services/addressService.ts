@@ -11,17 +11,13 @@ export interface AddressResponse {
 }
 
 export const addressService = {
-  getAddresses: async (token: string): Promise<AddressResponse[]> => {
-    const response = await api.get('/buyer/addresses', {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+  getAddresses: async (): Promise<AddressResponse[]> => {
+    const response = await api.get('/buyer/addresses');
     return response.data;
   },
 
-  addAddress: async (data: AddressRequest, token: string): Promise<AddressResponse> => {
-    const response = await api.post('/buyer/addresses', data, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+  addAddress: async (data: AddressRequest): Promise<AddressResponse> => {
+    const response = await api.post('/buyer/addresses', data);
     return response.data;
   }
 };
