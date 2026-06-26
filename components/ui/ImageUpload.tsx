@@ -9,12 +9,16 @@ interface ImageUploadProps {
   onImageUploaded: (url: string) => void;
   onImageRemoved: () => void;
   defaultImage?: string;
+  className?: string;
+  uploadType?: 'product' | 'store' | 'user';
 }
 
 export function ImageUpload({ 
   onImageUploaded, 
   onImageRemoved, 
-  defaultImage
+  defaultImage,
+  className = '',
+  uploadType = 'product'
 }: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string | null>(defaultImage || null);
@@ -44,10 +48,14 @@ export function ImageUpload({
       setPreviewUrl(objectUrl);
 
       // Upload via backend
-      const { url } = await sellerProductService.uploadProductImage(file);
+      const { url } = await sellerProductService.uploadProductImage(file, uploadType);
 
       onImageUploaded(url);
-      showToast.success('Upload Berhasil', 'Gambar produk berhasil diunggah.');
+      
+      let successMsg = 'Gambar produk berhasil diunggah.';
+      if (uploadType === 'store') successMsg = 'Logo toko berhasil diunggah.';
+      if (uploadType === 'user') successMsg = 'Foto profil berhasil diunggah.';
+      showToast.success('Upload Berhasil', successMsg);
       
     } catch (error: any) {
       console.error('Upload Error:', error);
