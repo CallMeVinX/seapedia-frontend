@@ -319,9 +319,25 @@ function ProductsContent() {
                       <h4 className="text-sm font-semibold text-slate-800 line-clamp-2 min-h-[40px] mb-2 hover:text-blue-700 transition-colors">
                         {product.name}
                       </h4>
-                      <p className="text-xl font-extrabold text-slate-900 mb-5">
-                        {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(Number(product.price))}
-                      </p>
+                      {product.promo_price ? (
+                        <div className="flex flex-col mb-5">
+                          <span className="text-xs font-semibold text-slate-400 line-through mb-0.5">
+                            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(product.price))}
+                          </span>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-xl font-extrabold text-red-600">
+                              {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(product.promo_price))}
+                            </span>
+                            <span className="text-[10px] font-bold text-red-600 bg-red-100 px-1 py-0.5 rounded-sm whitespace-nowrap">
+                              {Math.round(((product.price - product.promo_price) / product.price) * 100)}% OFF
+                            </span>
+                          </div>
+                        </div>
+                      ) : (
+                        <p className="text-xl font-extrabold text-slate-900 mb-5">
+                          {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(product.price))}
+                        </p>
+                      )}
                       
                       <Link href={`/products/${product.id}`}>
                         <Button

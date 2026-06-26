@@ -14,8 +14,12 @@ export default function StoreInfoCard({ product }: { product: Product }) {
       </div>
 
       <div className="flex items-center gap-4 mb-6">
-        <div className="w-14 h-14 bg-slate-900 rounded-xl flex items-center justify-center shrink-0">
-          <span className="text-white font-bold text-xl tracking-widest">{initials}</span>
+        <div className="w-14 h-14 bg-slate-900 rounded-xl flex items-center justify-center shrink-0 overflow-hidden">
+          {product.store_avatar ? (
+            <img src={product.store_avatar} alt={`${product.store_name} logo`} className="w-full h-full object-cover" />
+          ) : (
+            <span className="text-white font-bold text-xl tracking-widest">{initials}</span>
+          )}
         </div>
         <div>
           <h4 className="font-bold text-slate-900 line-clamp-1">{product.store_name}</h4>

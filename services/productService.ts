@@ -5,10 +5,12 @@ export interface Product {
   name: string;
   description: string | null;
   price: number;
+  promo_price: number | null;
   stock: number;
   image_url: string | null;
   images: string[];
   store_name: string;
+  store_avatar: string | null;
   category_name: string;
 }
 

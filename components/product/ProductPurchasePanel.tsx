@@ -11,13 +11,17 @@ import Link from "next/link";
 import { showToast } from "@/utils/toast";
 import { useState } from "react";
 
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
+
 export default function ProductPurchasePanel({ product }: { product: Product }) {
   const { user } = useAuthStore();
   const { fetchCartCount } = useCartStore();
   const [isCheckingOut, setIsCheckingOut] = useState(false);
   const [isAddingToCart, setIsAddingToCart] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
+  const [confirmActionType, setConfirmActionType] = useState<'add_to_cart' | 'buy_now' | null>(null);
 
-  const handleAddToCart = async () => {
+  const handleAddToCart = async (replaceCart = false) => {
     if (!user) {
       showToast.error("Gagal", 'Silakan login terlebih dahulu.');
       return;
@@ -27,19 +31,26 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
     try {
       await cartService.addToCart({
         product_id: product.id,
-        quantity: 1
+        quantity: 1,
+        replace_cart: replaceCart
       });
       showToast.success("Berhasil", 'Barang ditambahkan ke keranjang!');
       fetchCartCount();
     } catch (error: any) {
-      const msg = error.response?.data?.detail || 'Gagal menambahkan ke keranjang. Coba lagi.';
-      showToast.error("Gagal", msg);
+      const detail = error.response?.data?.detail;
+      if (error.response?.status === 409 && detail === "CONFLICT_DIFFERENT_STORE") {
+        setConfirmActionType('add_to_cart');
+        setShowConfirm(true);
+      } else {
+        const msg = detail || 'Gagal menambahkan ke keranjang. Coba lagi.';
+        showToast.error("Gagal", msg);
+      }
     } finally {
       setIsAddingToCart(false);
     }
   };
 
-  const handleBuyNow = async () => {
+  const handleBuyNow = async (replaceCart = false) => {
     if (!user) {
       showToast.error("Gagal", 'Sesi telah berakhir. Silakan login kembali.');
       return;
@@ -50,7 +61,8 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
       // 1. Add to cart first to get the cart_item_id
       const cartResp = await cartService.addToCart({
         product_id: product.id,
-        quantity: 1
+        quantity: 1,
+        replace_cart: replaceCart
       });
       fetchCartCount();
       
@@ -70,15 +82,38 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
       showToast.success("Berhasil", `Checkout berhasil! ID Pesanan: ${response.order_id}`);
       fetchCartCount(); // refresh count as item is removed
     } catch (error: any) {
-      const msg = error.response?.data?.detail || error.message || 'Terjadi kesalahan saat memproses checkout.';
-      showToast.error("Gagal", msg);
+      const detail = error.response?.data?.detail;
+      if (error.response?.status === 409 && detail === "CONFLICT_DIFFERENT_STORE") {
+        setConfirmActionType('buy_now');
+        setShowConfirm(true);
+      } else {
+        const msg = detail || error.message || 'Terjadi kesalahan saat memproses checkout.';
+        showToast.error("Gagal", msg);
+      }
     } finally {
       setIsCheckingOut(false);
     }
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <>
+      <ConfirmModal
+        isOpen={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        onConfirm={() => {
+          setShowConfirm(false);
+          if (confirmActionType === 'add_to_cart') {
+            setIsAddingToCart(false);
+            handleAddToCart(true);
+          } else if (confirmActionType === 'buy_now') {
+            setIsCheckingOut(false);
+            handleBuyNow(true);
+          }
+        }}
+        title="Ganti Toko?"
+        message="Keranjang Anda berisi produk dari toko lain. Anda hanya dapat membeli dari satu toko pada satu waktu. Ingin mengosongkan keranjang dan melanjutkan?"
+      />
+      <div className="flex flex-col gap-6">
       {/* Header Info */}
       <div>
         <div className="flex items-center gap-3 mb-3">
@@ -92,9 +127,25 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
         <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 leading-tight mb-4">
           {product.name}
         </h1>
-        <div className="text-3xl font-extrabold text-blue-950">
-          {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR' }).format(Number(product.price))}
-        </div>
+        {product.promo_price ? (
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold text-slate-400 line-through mb-1">
+              {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(product.price))}
+            </span>
+            <div className="flex items-center gap-3">
+              <div className="text-3xl font-extrabold text-red-600">
+                {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(product.promo_price))}
+              </div>
+              <span className="text-sm font-bold text-red-600 bg-red-100 px-2 py-1 rounded-md">
+                {Math.round(((product.price - product.promo_price) / product.price) * 100)}% OFF
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="text-3xl font-extrabold text-blue-950">
+            {new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', maximumFractionDigits: 0 }).format(Number(product.price))}
+          </div>
+        )}
       </div>
 
       <hr className="border-slate-100" />
@@ -137,7 +188,7 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
           <Button 
             variant="primary" 
             className="w-full py-3.5 text-base" 
-            onClick={handleAddToCart}
+            onClick={() => handleAddToCart(false)}
             disabled={isAddingToCart}
             icon={isAddingToCart ? <Loader2 className="w-5 h-5 animate-spin" /> : <ShoppingCart className="w-5 h-5" />}
           >
@@ -146,7 +197,7 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
           <Button 
             variant="secondary" 
             className="w-full py-3.5 text-base border-blue-600 text-blue-700 hover:bg-blue-50"
-            onClick={handleBuyNow}
+            onClick={() => handleBuyNow(false)}
             disabled={isCheckingOut}
             icon={isCheckingOut ? <Loader2 className="w-5 h-5 animate-spin" /> : undefined}
           >
@@ -156,5 +207,6 @@ export default function ProductPurchasePanel({ product }: { product: Product }) 
       )}
 
     </div>
+    </>
   );
 }
