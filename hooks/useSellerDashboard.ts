@@ -77,6 +77,7 @@ export const useSellerDashboard = () => {
     isLoadingOrders,
     isCreatingStore,
     registerStore,
-    refreshOrders: loadIncomingOrders
+    refreshOrders: loadIncomingOrders,
+    refreshStoreStatus: checkStatus
   };
 };
