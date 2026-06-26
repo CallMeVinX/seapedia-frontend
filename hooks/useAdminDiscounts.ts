@@ -3,7 +3,6 @@ import {
   adminService,
   DiscountItem,
   DiscountCreateRequest,
-  DiscountCreateRequest,
   DiscountUpdateRequest,
 } from '@/services/adminService';
 import { showToast } from '@/utils/toast';
