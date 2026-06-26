@@ -7,16 +7,15 @@ import { useCartStore } from "@/hooks/useCartStore";
 import { cartService, CartResponse, CartItemResponse } from "@/services/cartService";
 import { addressService, AddressResponse } from "@/services/addressService";
 import { checkoutService } from "@/services/checkoutService";
-import Link from "next/link";
 import Image from "next/image";
-import { ArrowLeft, MapPin, Truck, Store, Loader2, CheckCircle2, Plus, Info } from "lucide-react";
+import { ArrowLeft, MapPin, Truck, Store, Loader2, CheckCircle2, Plus, Info, Ticket, X } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { showToast } from "@/utils/toast";
 
 const DELIVERY_METHODS = [
-  { id: "REGULAR", name: "Reguler", price: 10000, desc: "2-4 Hari Kerja" },
-  { id: "NEXT_DAY", name: "Next Day", price: 15000, desc: "1 Hari Kerja" },
-  { id: "INSTANT", name: "Instan", price: 20000, desc: "2-4 Jam" },
+  { id: "REGULAR", name: "Reguler", price: 10000, desc: "4 Hari Kerja" },
+  { id: "NEXT_DAY", name: "Next Day", price: 30000, desc: "1 Hari Kerja" },
+  { id: "INSTANT", name: "Instan", price: 50000, desc: "Hari ini" },
 ];
 
 function CheckoutContent() {
@@ -35,6 +34,12 @@ function CheckoutContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [newAddressText, setNewAddressText] = useState("");
   const [isAddingAddress, setIsAddingAddress] = useState(false);
+
+  // Voucher state
+  const [discountCode, setDiscountCode] = useState("");
+  const [appliedDiscount, setAppliedDiscount] = useState<{ code: string, amount: number } | null>(null);
+  const [discountError, setDiscountError] = useState<string | null>(null);
+  const [isApplyingDiscount, setIsApplyingDiscount] = useState(false);
 
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(value);
@@ -97,6 +102,39 @@ function CheckoutContent() {
     }
   };
 
+  const handleApplyDiscount = async () => {
+    const code = discountCode.trim().toUpperCase();
+    if (!code) {
+      setDiscountError("Masukkan kode diskon terlebih dahulu.");
+      return;
+    }
+    
+    setIsApplyingDiscount(true);
+    setDiscountError(null);
+    try {
+      const subtotal = cartItems.reduce((sum, item) => sum + item.total_price, 0);
+      const response = await checkoutService.validateVoucher({
+        voucher_code: code,
+        subtotal: subtotal
+      });
+      
+      setAppliedDiscount({ code: response.code, amount: response.amount });
+      showToast.success("Kode Diterapkan", response.message);
+    } catch (error: any) {
+      const msg = error.response?.data?.detail || "Gagal menerapkan kode diskon.";
+      setDiscountError(msg);
+      setAppliedDiscount(null);
+    } finally {
+      setIsApplyingDiscount(false);
+    }
+  };
+
+  const handleRemoveDiscount = () => {
+    setAppliedDiscount(null);
+    setDiscountCode("");
+    setDiscountError(null);
+  };
+
   const handlePlaceOrder = async () => {
     if (!selectedAddressId) {
       showToast.error("Gagal", "Silakan pilih alamat pengiriman.");
@@ -109,15 +147,21 @@ function CheckoutContent() {
           cart_item_ids: cartItems.map(i => i.id),
           address_id: selectedAddressId,
           delivery_method: deliveryMethod,
+          ...(appliedDiscount ? { voucher_code: appliedDiscount.code } : {}),
         }
       );
 
       showToast.success("Berhasil", `Pesanan berhasil dibuat! Total: ${formatCurrency(response.final_total)}`);
       fetchCartCount();
-      // Normally redirect to an order success page or order history
       router.push("/buyer/orders");
     } catch (error: any) {
-      showToast.error("Gagal", error.response?.data?.detail || "Gagal membuat pesanan.");
+      const msg = error.response?.data?.detail || "Gagal membuat pesanan.";
+      // If discount code is invalid, show specific feedback
+      if (msg.toLowerCase().includes('diskon') || msg.toLowerCase().includes('kode')) {
+        setDiscountError(msg);
+        setAppliedDiscount(null);
+      }
+      showToast.error("Gagal", msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -134,8 +178,12 @@ function CheckoutContent() {
   const selectedCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const selectedSubtotal = cartItems.reduce((sum, item) => sum + item.total_price, 0);
   const deliveryFee = DELIVERY_METHODS.find(d => d.id === deliveryMethod)?.price || 0;
-  const ppn = Math.round(selectedSubtotal * 0.12);
-  const grandTotal = selectedSubtotal + deliveryFee + ppn;
+  
+  const discountAmount = appliedDiscount?.amount || 0;
+  let ppn = Math.round((selectedSubtotal - discountAmount) * 0.12);
+  if (ppn < 0) ppn = 0;
+  let grandTotal = selectedSubtotal - discountAmount + deliveryFee + ppn;
+  if (grandTotal < 0) grandTotal = 0;
 
   return (
     <div className="bg-slate-50 min-h-screen pb-20">
@@ -280,6 +328,67 @@ function CheckoutContent() {
               </div>
             </div>
 
+            {/* Voucher / Promo Code Section */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+              <div className="flex items-center gap-3 mb-4">
+                <Ticket className="w-5 h-5 text-purple-600" />
+                <h2 className="text-lg font-bold text-slate-900">Kode Promo / Voucher</h2>
+              </div>
+
+              {appliedDiscount ? (
+                <div className="flex items-center justify-between bg-purple-50 border border-purple-200 rounded-xl px-4 py-3">
+                  <div className="flex items-center gap-3">
+                    <CheckCircle2 className="w-5 h-5 text-purple-600" />
+                    <div>
+                      <p className="text-sm font-bold text-purple-800 font-mono tracking-wider">{appliedDiscount.code}</p>
+                      <p className="text-xs text-purple-600">Diskon sebesar {formatCurrency(appliedDiscount.amount)}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleRemoveDiscount}
+                    className="p-1.5 text-purple-400 hover:text-purple-700 hover:bg-purple-100 rounded-lg transition-colors"
+                    title="Hapus kode"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              ) : (
+                <div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={discountCode}
+                      onChange={(e) => {
+                        setDiscountCode(e.target.value.toUpperCase());
+                        setDiscountError(null);
+                      }}
+                      placeholder="Masukkan kode promo"
+                      maxLength={20}
+                      className={`flex-1 px-4 py-2.5 border rounded-xl text-sm font-mono uppercase tracking-wider focus:outline-none focus:ring-1 transition-colors ${
+                        discountError
+                          ? 'border-red-400 focus:ring-red-500 focus:border-red-500'
+                          : 'border-slate-200 focus:ring-purple-500 focus:border-purple-500'
+                      }`}
+                    />
+                    <Button
+                      variant="secondary"
+                      className="px-5 py-2.5 text-sm font-bold border-purple-200 text-purple-700 hover:bg-purple-50 disabled:opacity-50"
+                      onClick={handleApplyDiscount}
+                      disabled={isApplyingDiscount}
+                    >
+                      {isApplyingDiscount ? <Loader2 className="w-5 h-5 animate-spin" /> : "Terapkan"}
+                    </Button>
+                  </div>
+                  {discountError && (
+                    <p className="mt-2 text-xs text-red-600 flex items-center gap-1">
+                      <Info className="w-3 h-3" />
+                      {discountError}
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
           </div>
 
           {/* Order Summary Sidebar */}
@@ -291,6 +400,15 @@ function CheckoutContent() {
                 <span className="text-slate-500 font-medium">Total Harga ({selectedCount} barang)</span>
                 <span className="font-bold text-slate-900">{formatCurrency(selectedSubtotal)}</span>
               </div>
+              {appliedDiscount && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-purple-600 font-medium flex items-center gap-1">
+                    <Ticket className="w-3.5 h-3.5" />
+                    Kode: {appliedDiscount.code}
+                  </span>
+                  <span className="font-bold text-purple-600">- {formatCurrency(appliedDiscount.amount)}</span>
+                </div>
+              )}
               <div className="flex justify-between text-sm">
                 <span className="text-slate-500 font-medium">Ongkos Kirim</span>
                 <span className="font-bold text-slate-900">{formatCurrency(deliveryFee)}</span>

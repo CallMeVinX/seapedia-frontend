@@ -11,6 +11,7 @@ import Button from "@/components/ui/Button";
 import { showToast } from "@/utils/toast";
 
 import { EmptyState } from "@/components/ui/EmptyState";
+import { ConfirmModal } from "@/components/ui/ConfirmModal";
 import { OrderSummaryCard } from "@/components/order/OrderSummaryCard";
 import { CartStoreGroup } from "@/components/cart/CartStoreGroup";
 import { CartItemRow } from "@/components/cart/CartItemRow";
@@ -64,6 +65,48 @@ export default function CartPage() {
     }
   };
 
+  const [confirmAction, setConfirmAction] = useState<{type: 'CLEAR' | 'REMOVE', id?: number} | null>(null);
+  const [isConfirming, setIsConfirming] = useState(false);
+
+  const handleDeleteItem = (productId: number) => {
+    if (!user) return;
+    setConfirmAction({ type: 'REMOVE', id: productId });
+  };
+
+  const handleClearCart = () => {
+    if (!user) return;
+    setConfirmAction({ type: 'CLEAR' });
+  };
+
+  const executeConfirmAction = async () => {
+    if (!confirmAction) return;
+    setIsConfirming(true);
+    
+    // Set isUpdatingId if deleting specific item so the row shows loading state
+    if (confirmAction.type === 'REMOVE' && confirmAction.id) {
+      setIsUpdatingId(confirmAction.id);
+    }
+    
+    try {
+      if (confirmAction.type === 'CLEAR') {
+        await cartService.clearCart();
+        showToast.success("Berhasil", "Keranjang berhasil dikosongkan.");
+      } else if (confirmAction.type === 'REMOVE' && confirmAction.id) {
+        await cartService.removeFromCart(confirmAction.id);
+        showToast.success("Berhasil", "Produk dihapus dari keranjang.");
+      }
+      await loadCart();
+      await fetchCartCount();
+    } catch (error: any) {
+      const msg = error.response?.data?.detail || "Gagal melakukan aksi.";
+      showToast.error("Gagal", msg);
+    } finally {
+      setIsConfirming(false);
+      setConfirmAction(null);
+      setIsUpdatingId(null);
+    }
+  };
+
   const storeGroups: StoreGroup[] = useMemo(() => {
     if (!cart || !cart.items.length) return [];
     const groupMap = new Map<number, StoreGroup>();
@@ -105,8 +148,26 @@ export default function CartPage() {
     }
   };
 
+  const activeStoreId = useMemo(() => {
+    if (selectedItems.length === 0) return null;
+    const firstItem = cart?.items.find(i => i.id === selectedItems[0]);
+    return firstItem ? firstItem.store_id : null;
+  }, [selectedItems, cart]);
+
   const handleCheckout = () => {
     if (!user || !cart || selectedItems.length === 0) return;
+
+    // Single-store constraint: prevent checkout from multiple stores
+    const selectedCartItems = cart.items.filter(i => selectedItems.includes(i.id));
+    const uniqueStoreIds = new Set(selectedCartItems.map(i => i.store_id));
+    if (uniqueStoreIds.size > 1) {
+      showToast.error(
+        "Tidak Bisa Checkout",
+        "Anda hanya dapat checkout barang dari satu toko. Silakan pilih barang dari toko yang sama."
+      );
+      return;
+    }
+
     setIsCheckingOut(true);
     router.push(`/buyer/checkout?items=${selectedItems.join(",")}`);
   };
@@ -157,9 +218,17 @@ export default function CartPage() {
           </Link>
           <h1 className="text-2xl font-bold text-slate-900">Keranjang Belanja</h1>
           {!isEmpty && (
-            <span className="ml-auto text-sm font-medium text-slate-500 bg-slate-200/50 px-3 py-1 rounded-full">
-              {cart!.total_items} barang
-            </span>
+            <div className="ml-auto flex items-center gap-3">
+              <span className="text-sm font-medium text-slate-500 bg-slate-200/50 px-3 py-1 rounded-full">
+                {cart!.total_items} barang
+              </span>
+              <button 
+                onClick={handleClearCart}
+                className="text-sm font-semibold text-rose-600 hover:text-rose-700 bg-rose-50 hover:bg-rose-100 px-4 py-1.5 rounded-full transition-colors"
+              >
+                Kosongkan
+              </button>
+            </div>
           )}
         </div>
 
@@ -181,6 +250,7 @@ export default function CartPage() {
                 const storeItemIds = group.items.map(i => i.id);
                 const isStoreAllSelected = storeItemIds.length > 0 && storeItemIds.every(id => selectedItems.includes(id));
                 const isStoreIndeterminate = !isStoreAllSelected && storeItemIds.some(id => selectedItems.includes(id));
+                const isDisabled = activeStoreId !== null && activeStoreId !== group.store_id;
 
                 return (
                   <CartStoreGroup 
@@ -190,6 +260,7 @@ export default function CartPage() {
                     isAllSelected={isStoreAllSelected}
                     isIndeterminate={isStoreIndeterminate}
                     onToggleStore={handleToggleStore}
+                    isDisabled={isDisabled}
                   >
                     {group.items.map((item) => (
                       <CartItemRow 
@@ -200,6 +271,8 @@ export default function CartPage() {
                         isUpdating={isUpdatingId === item.product_id}
                         onToggleItem={handleToggleItem}
                         onUpdateQuantity={handleUpdateQuantity}
+                        onDeleteItem={handleDeleteItem}
+                        isDisabled={isDisabled}
                       />
                     ))}
                   </CartStoreGroup>
@@ -222,6 +295,19 @@ export default function CartPage() {
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        isOpen={confirmAction !== null}
+        onClose={() => setConfirmAction(null)}
+        onConfirm={executeConfirmAction}
+        title={confirmAction?.type === 'CLEAR' ? 'Kosongkan Keranjang' : 'Hapus Produk'}
+        message={
+          confirmAction?.type === 'CLEAR' 
+            ? 'Apakah Anda yakin ingin menghapus semua produk dari keranjang belanja Anda?' 
+            : 'Apakah Anda yakin ingin menghapus produk ini dari keranjang?'
+        }
+        isLoading={isConfirming}
+      />
     </div>
   );
 }

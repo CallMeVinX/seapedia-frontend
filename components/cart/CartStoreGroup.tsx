@@ -7,6 +7,7 @@ interface CartStoreGroupProps {
   isAllSelected: boolean;
   isIndeterminate: boolean;
   onToggleStore: (storeId: number) => void;
+  isDisabled?: boolean;
   children: ReactNode;
 }
 
@@ -16,20 +17,24 @@ export const CartStoreGroup: React.FC<CartStoreGroupProps> = ({
   isAllSelected,
   isIndeterminate,
   onToggleStore,
+  isDisabled = false,
   children
 }) => {
   return (
-    <div className={`bg-white rounded-2xl border ${isAllSelected ? 'border-blue-400 ring-1 ring-blue-400' : 'border-slate-200'} shadow-sm overflow-hidden transition-all duration-300`}>
+    <div className={`bg-white rounded-2xl border ${isAllSelected ? 'border-blue-400 ring-1 ring-blue-400' : 'border-slate-200'} shadow-sm overflow-hidden transition-all duration-300 ${isDisabled ? 'opacity-50 grayscale-[50%]' : ''}`}>
       <div className={`px-5 py-3.5 flex items-center gap-3 border-b border-slate-100 ${isAllSelected ? 'bg-blue-50/50' : 'bg-slate-50/50'}`}>
         <button 
-          onClick={() => onToggleStore(storeId)}
+          onClick={() => !isDisabled && onToggleStore(storeId)}
+          disabled={isDisabled}
           className={`relative w-6 h-6 rounded border-2 flex items-center justify-center transition-all duration-200 focus:outline-none ${
             isAllSelected 
               ? 'bg-blue-600 border-blue-600' 
               : isIndeterminate
                 ? 'bg-blue-600 border-blue-600'
-                : 'bg-white border-slate-300 hover:border-blue-400'
-          } cursor-pointer`}
+                : isDisabled
+                  ? 'bg-slate-100 border-slate-200 cursor-not-allowed'
+                  : 'bg-white border-slate-300 hover:border-blue-400 cursor-pointer'
+          }`}
         >
           {isAllSelected && (
             <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
