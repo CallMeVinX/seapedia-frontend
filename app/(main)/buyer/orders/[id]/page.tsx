@@ -125,10 +125,13 @@ export default function OrderDetailPage() {
             <OrderSummaryCard
               title="Rincian Pembayaran"
               totalItems={order.items.length}
-              subtotal={order.final_total}
-              deliveryFee={-1} 
-              ppn={0} 
+              subtotal={order.subtotal}
+              deliveryFee={order.delivery_fee}
+              ppn={order.ppn_amount}
+              promoDiscount={order.promo_discount_amount}
+              voucherDiscount={order.voucher_discount_amount}
               grandTotal={order.final_total}
+              isSticky={false}
             />
 
             {order.current_status === 'Menunggu Pembayaran' && (

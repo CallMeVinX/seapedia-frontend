@@ -7,6 +7,8 @@ interface OrderSummaryCardProps {
   subtotal: number;
   deliveryFee?: number;
   ppn: number;
+  promoDiscount?: number;
+  voucherDiscount?: number;
   grandTotal: number;
   buttonText?: string;
   onButtonClick?: () => void;
@@ -14,6 +16,7 @@ interface OrderSummaryCardProps {
   isDisabled?: boolean;
   buttonIcon?: ReactNode;
   infoMessage?: string;
+  isSticky?: boolean;
 }
 
 export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({
@@ -22,19 +25,22 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({
   subtotal,
   deliveryFee = 0,
   ppn,
+  promoDiscount = 0,
+  voucherDiscount = 0,
   grandTotal,
   buttonText,
   onButtonClick,
   isLoading = false,
   isDisabled = false,
   buttonIcon,
-  infoMessage
+  infoMessage,
+  isSticky = true
 }) => {
   const formatCurrency = (value: number) =>
     new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR" }).format(value);
 
   return (
-    <div className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200 shadow-lg shadow-slate-200/40 sticky top-24">
+    <div className={`bg-white rounded-3xl p-6 md:p-8 border border-slate-200 shadow-lg shadow-slate-200/40 ${isSticky ? 'sticky top-24' : ''}`}>
       <h3 className="text-lg font-bold text-slate-900 mb-6">{title}</h3>
 
       <div className="space-y-4 mb-6">
@@ -46,6 +52,25 @@ export const OrderSummaryCard: React.FC<OrderSummaryCardProps> = ({
             {formatCurrency(subtotal)}
           </span>
         </div>
+        
+        {promoDiscount > 0 && (
+          <div className="flex justify-between text-sm">
+            <span className="text-green-600 font-medium">Diskon Promo</span>
+            <span className="font-bold text-green-600">
+              -{formatCurrency(promoDiscount)}
+            </span>
+          </div>
+        )}
+
+        {voucherDiscount > 0 && (
+          <div className="flex justify-between text-sm">
+            <span className="text-green-600 font-medium">Diskon Voucher</span>
+            <span className="font-bold text-green-600">
+              -{formatCurrency(voucherDiscount)}
+            </span>
+          </div>
+        )}
+
         <div className="flex justify-between text-sm">
           <span className="text-slate-500 font-medium">Ongkos Kirim</span>
           <span className="font-bold text-slate-900">

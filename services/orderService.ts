@@ -21,8 +21,12 @@ export interface OrderResponse {
   id: number;
   store_name: string;
   current_status: string;
-  final_total: number;
+  subtotal: number;
+  promo_discount_amount: number;
+  voucher_discount_amount: number;
   delivery_fee: number;
+  ppn_amount: number;
+  final_total: number;
   shipping_address?: string;
   created_at: string;
   items: OrderItemResponse[];
