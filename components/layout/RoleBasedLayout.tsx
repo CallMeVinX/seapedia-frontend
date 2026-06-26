@@ -1,6 +1,7 @@
 'use client';
 
 import { ReactNode, useEffect, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '@/hooks/useAuthStore';
 import { GuestBuyerLayout } from './GuestBuyerLayout';
 import { RoleSelectionModal } from '@/components/ui/RoleSelectionModal';
@@ -8,10 +9,25 @@ import { RoleSelectionModal } from '@/components/ui/RoleSelectionModal';
 export const RoleBasedLayout = ({ children }: { children: ReactNode }) => {
   const { activeRole } = useAuthStore();
   const [mounted, setMounted] = useState(false);
+  const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (mounted && pathname === '/') {
+      const role = activeRole?.toLowerCase();
+      if (role === 'admin') {
+        router.replace('/admin/dashboard');
+      } else if (role === 'seller') {
+        router.replace('/seller/dashboard');
+      } else if (role === 'driver') {
+        router.replace('/driver/dashboard');
+      }
+    }
+  }, [mounted, pathname, activeRole, router]);
 
   // To prevent hydration errors since activeRole comes from localStorage via zustand
   if (!mounted) {
@@ -29,8 +45,6 @@ export const RoleBasedLayout = ({ children }: { children: ReactNode }) => {
   const renderLayout = () => {
     const role = activeRole?.toLowerCase();
     
-    // For specific roles, we let the nested layouts (e.g., app/(main)/seller/layout.tsx) handle the UI wrapper.
-    // If we're on buyer or guest, we wrap with GuestBuyerLayout.
     switch (role) {
       case 'seller':
       case 'admin':
@@ -38,7 +52,6 @@ export const RoleBasedLayout = ({ children }: { children: ReactNode }) => {
         return <>{children}</>;
       case 'buyer':
       default:
-        // Includes 'buyer' and guest (null or undefined)
         return <GuestBuyerLayout>{children}</GuestBuyerLayout>;
     }
   };

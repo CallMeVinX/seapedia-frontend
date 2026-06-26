@@ -26,7 +26,7 @@ export const RoleSelectionModal = () => {
       switch (roleUpper) {
         case 'SELLER': router.push('/seller/dashboard'); break;
         case 'DRIVER': router.push('/driver/dashboard'); break;
-        case 'ADMIN': router.push('/admin/monitoring'); break;
+        case 'ADMIN': router.push('/admin/dashboard'); break;
         case 'BUYER': router.push('/'); break;
       }
     } catch (error) {

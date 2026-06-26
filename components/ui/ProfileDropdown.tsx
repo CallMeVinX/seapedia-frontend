@@ -72,8 +72,12 @@ export const ProfileDropdown = () => {
         onClick={() => setDropdownOpen(!dropdownOpen)}
         className={`flex items-center gap-2 text-sm font-medium transition-all p-1.5 rounded-full outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-1 ${dropdownOpen ? 'bg-slate-100 text-blue-700' : 'text-slate-700 hover:bg-slate-50 hover:text-slate-900'}`}
       >
-        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-700 to-blue-500 flex items-center justify-center text-white font-bold shadow-inner ring-2 ring-white">
-          {user.name.charAt(0).toUpperCase()}
+        <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-700 to-blue-500 flex items-center justify-center text-white font-bold shadow-inner ring-2 ring-white overflow-hidden">
+          {user.avatar_url ? (
+            <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
+          ) : (
+            user.name.charAt(0).toUpperCase()
+          )}
         </div>
         <span className="hidden sm:block font-semibold tracking-tight pr-1">{user.name}</span>
         <ChevronDown className={`h-4 w-4 mr-1 transition-transform duration-200 ${dropdownOpen ? 'rotate-180 text-blue-600' : 'text-slate-400'}`} />
@@ -82,8 +86,12 @@ export const ProfileDropdown = () => {
       {dropdownOpen && (
         <div className="absolute right-0 mt-3 w-64 bg-white/95 backdrop-blur-xl border border-slate-200/60 rounded-2xl shadow-[0_10px_40px_-10px_rgba(0,0,0,0.1)] py-2 z-50 transform origin-top-right transition-all ease-out duration-200 animate-in fade-in slide-in-from-top-2">
           <div className="px-4 py-3 border-b border-slate-100/80 mb-1 flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-700 to-blue-500 flex items-center justify-center text-white font-bold shadow-sm shrink-0">
-              {user.name.charAt(0).toUpperCase()}
+            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-700 to-blue-500 flex items-center justify-center text-white font-bold shadow-sm shrink-0 overflow-hidden">
+              {user.avatar_url ? (
+                <img src={user.avatar_url} alt={user.name} className="w-full h-full object-cover" />
+              ) : (
+                user.name.charAt(0).toUpperCase()
+              )}
             </div>
             <div className="overflow-hidden">
               <p className="text-sm font-bold text-slate-900 truncate">{user.name}</p>
@@ -191,7 +199,7 @@ export const ProfileDropdown = () => {
         <ul className="list-disc pl-5 mt-2 space-y-1">
             <li>Anda bertanggung jawab menjaga kondisi barang pesanan dari titik penjemputan hingga ke tangan pelanggan.</li>
             <li>Anda harus memiliki Surat Izin Mengemudi (SIM) yang masih berlaku sesuai dengan jenis kendaraan yang didaftarkan.</li>
-            <li>Sistem akan memotong 10% dari tarif pengantaran sebagai biaya layanan platform SEAPEDIA.</li>
+            <li>Sistem akan memotong 20% dari tarif pengantaran sebagai biaya layanan platform SEAPEDIA.</li>
             <li>Tindakan penipuan, penahanan paket, atau penyalahgunaan akun akan mengakibatkan akun Anda diblokir secara permanen.</li>
         </ul>
       </Modal>

@@ -9,6 +9,7 @@ export interface UserProfileResponse {
   id: string;
   email: string;
   full_name: string;
+  avatar_url: string | null;
   roles: string[];
   active_role: string | null;
   financials: {
@@ -34,6 +35,11 @@ export const authService = {
 
   getMe: async (): Promise<UserProfileResponse> => {
     const response = await api.get<UserProfileResponse>('/users/me');
+    return response.data;
+  },
+
+  updateProfile: async (data: { full_name?: string; avatar_url?: string }): Promise<UserProfileResponse> => {
+    const response = await api.put<UserProfileResponse>('/users/me', data);
     return response.data;
   },
 

@@ -6,13 +6,6 @@ import HomeProductCard from "@/components/product/HomeProductCard";
 import { ReviewCard, Review } from "@/components/ui/ReviewCard";
 import { ReviewForm } from "@/components/ui/ReviewForm";
 
-// --- MOCK REVIEWS DATA ---
-const mockReviews: Review[] = [
-  { id: "r1", reviewerName: "Sarah Jenkins", rating: 5, date: "Oct 12, 2026", comment: "Absolutely love the fast shipping. The fact that I can buy from multiple sellers in one checkout is a game changer." },
-  { id: "r2", reviewerName: "Michael Chang", rating: 4, date: "Oct 10, 2026", comment: "Great UI and very responsive customer support. Had an issue with a voucher but it was resolved instantly." },
-  { id: "r3", reviewerName: "Elena Rodriguez", rating: 5, date: "Oct 08, 2026", comment: "I became a seller last month and the dashboard is incredibly intuitive. Revenue tracking is spot on." },
-];
-
 async function getProducts() {
   try {
     // Implement Incremental Static Regeneration (ISR) to cache products for 60 seconds
@@ -27,10 +20,27 @@ async function getProducts() {
   }
 }
 
+async function getReviews() {
+  try {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reviews`, { 
+      next: { revalidate: 30 } 
+    });
+    if (!res.ok) return [];
+    return await res.json();
+  } catch (error) {
+    console.error("Failed to fetch reviews", error);
+    return [];
+  }
+}
+
 export default async function Home() {
   const products = await getProducts();
+  const reviews = await getReviews();
+  
   // Display only top 4 products for the homepage
   const displayProducts = products.slice(0, 4);
+  // Display up to 3 reviews for the homepage
+  const displayReviews = reviews.slice(0, 3);
 
   return (
     <div className="flex flex-col bg-slate-50 font-sans w-full pb-20">
@@ -42,29 +52,29 @@ export default async function Home() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center">
           <div className="flex flex-col items-start text-left max-w-2xl">
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 leading-[1.1]">
-              Discover Everything.<br/>
-              <span className="text-blue-900">One Marketplace.</span>
+              Temukan Segalanya.<br/>
+              <span className="text-blue-900">Satu Marketplace.</span>
             </h1>
             <p className="mt-6 text-lg sm:text-xl text-slate-600 leading-relaxed">
-              Shop millions of products from thousands of verified sellers. Fast logistics, secure payments, and endless variety—all curated for you.
+              Belanja jutaan produk dari ribuan penjual terverifikasi. Logistik cepat, pembayaran aman, dan pilihan tak terbatas—semua dikurasi untuk Anda.
             </p>
             <div className="mt-10 flex items-center gap-4 flex-wrap">
-              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Trending:</span>
-              <Link href="/products?category=Fresh%20Seafood%20%26%20Meats" className="px-4 py-1.5 bg-slate-200/60 hover:bg-slate-200 text-slate-700 rounded-full text-sm font-medium transition-colors cursor-pointer">Seafood & Meats</Link>
-              <Link href="/products?category=Electronics%20%26%20Gadgets" className="px-4 py-1.5 bg-slate-200/60 hover:bg-slate-200 text-slate-700 rounded-full text-sm font-medium transition-colors cursor-pointer">Electronics</Link>
-              <Link href="/products?category=Fashion%20%26%20Apparel" className="px-4 py-1.5 bg-slate-200/60 hover:bg-slate-200 text-slate-700 rounded-full text-sm font-medium transition-colors cursor-pointer">Fashion</Link>
+              <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Sedang Tren:</span>
+              <Link href="/products?category=Fresh%20Seafood%20%26%20Meats" className="px-4 py-1.5 bg-slate-200/60 hover:bg-slate-200 text-slate-700 rounded-full text-sm font-medium transition-colors cursor-pointer">Seafood & Daging</Link>
+              <Link href="/products?category=Electronics%20%26%20Gadgets" className="px-4 py-1.5 bg-slate-200/60 hover:bg-slate-200 text-slate-700 rounded-full text-sm font-medium transition-colors cursor-pointer">Elektronik</Link>
+              <Link href="/products?category=Fashion%20%26%20Apparel" className="px-4 py-1.5 bg-slate-200/60 hover:bg-slate-200 text-slate-700 rounded-full text-sm font-medium transition-colors cursor-pointer">Pakaian</Link>
             </div>
           </div>
 
           <div className="relative w-full aspect-[4/3] rounded-3xl overflow-hidden shadow-2xl bg-white/50 backdrop-blur-sm border border-white/40">
-            <Image src="/hero.png" alt="3D Marketplace Concept" fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" priority />
+            <Image src="/hero.png" alt="Konsep Marketplace 3D" fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" priority />
             <div className="absolute bottom-6 right-6 bg-white/90 backdrop-blur-md px-4 py-3 rounded-2xl shadow-lg border border-white flex items-center gap-3">
               <div className="flex -space-x-2">
                 <div className="w-8 h-8 rounded-full bg-blue-900 border-2 border-white"></div>
                 <div className="w-8 h-8 rounded-full bg-blue-700 border-2 border-white"></div>
                 <div className="w-8 h-8 rounded-full bg-amber-700 border-2 border-white"></div>
               </div>
-              <span className="text-sm font-bold text-slate-900">10K+ Stores</span>
+              <span className="text-sm font-bold text-slate-900">10K+ Toko</span>
             </div>
           </div>
         </div>
@@ -74,11 +84,11 @@ export default async function Home() {
       <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-16">
         <div className="flex justify-between items-end mb-8">
           <div>
-            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">Explore Products</h2>
-            <p className="mt-2 text-slate-500">Discover top picks from our best sellers.</p>
+            <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">Jelajahi Produk</h2>
+            <p className="mt-2 text-slate-500">Temukan pilihan terbaik dari penjual teratas kami.</p>
           </div>
           <Link href="/products" className="text-sm font-semibold text-blue-700 hover:text-blue-900 flex items-center gap-1 group">
-            See All <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+            Lihat Semua <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
           </Link>
         </div>
 
@@ -90,7 +100,7 @@ export default async function Home() {
           </div>
         ) : (
           <div className="p-12 text-center text-slate-500 bg-white rounded-2xl border border-slate-200">
-            No products available right now.
+            Tidak ada produk yang tersedia saat ini.
           </div>
         )}
       </section>
@@ -98,15 +108,24 @@ export default async function Home() {
       {/* 3. Application Reviews Section */}
       <section className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 lg:py-24 bg-blue-900/5 rounded-3xl my-12">
         <div className="text-center mb-12">
-          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">What Our Users Say</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold text-slate-900">Apa Kata Pengguna Kami</h2>
           <p className="mt-4 text-slate-600 max-w-2xl mx-auto">
-            Don't just take our word for it. Here is what buyers, sellers, and drivers have to say about the SEAPEDIA ecosystem.
+            Jangan hanya percaya kata-kata kami. Berikut adalah apa yang dikatakan pembeli, penjual, dan pengemudi tentang ekosistem SEAPEDIA.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {mockReviews.map((review) => (
-            <ReviewCard key={review.id} review={review} />
+          {displayReviews.map((review: any) => (
+            <ReviewCard 
+              key={review.id} 
+              review={{
+                id: review.id,
+                reviewerName: review.reviewer_name,
+                rating: review.rating,
+                comment: review.comment,
+                date: new Date(review.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })
+              }} 
+            />
           ))}
         </div>
       </section>

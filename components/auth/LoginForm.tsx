@@ -102,8 +102,21 @@ export default function LoginForm() {
       
       showToast.success("Berhasil", "Login berhasil!");
       
-      // Redirect to home so they can see the Navbar change!
-      router.push("/");
+      // Redirect based on role if they only have 1 role
+      if (roles.length === 1) {
+        const roleUpper = roles[0].toUpperCase();
+        switch (roleUpper) {
+          case 'SELLER': router.push('/seller/dashboard'); break;
+          case 'DRIVER': router.push('/driver/dashboard'); break;
+          case 'ADMIN': router.push('/admin/dashboard'); break;
+          case 'BUYER': 
+          default:
+            router.push('/'); break;
+        }
+      } else {
+        // Redirect to home so they can see the Navbar and RoleSelectionModal
+        router.push("/");
+      }
 
     } catch (err: any) {
       if (err.response?.data?.detail) {

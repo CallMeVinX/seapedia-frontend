@@ -7,6 +7,7 @@ interface User {
   id: string;
   name: string;
   email: string;
+  avatar_url?: string | null;
 }
 
 interface AuthState {
@@ -20,6 +21,7 @@ interface AuthState {
   setActiveRole: (role: Role) => void;
   setRoleModalOpen: (isOpen: boolean) => void;
   addOwnedRole: (role: Role) => void;
+  updateUser: (data: Partial<User>) => void;
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -55,10 +57,18 @@ export const useAuthStore = create<AuthState>()(
       setRoleModalOpen: (isOpen) =>
         set({ isRoleModalOpen: isOpen }),
         
-      addOwnedRole: (role) =>
+        addOwnedRole: (role) =>
         set((state) => {
           if (!state.ownedRoles.includes(role)) {
             return { ownedRoles: [...state.ownedRoles, role] };
+          }
+          return {};
+        }),
+
+      updateUser: (data) =>
+        set((state) => {
+          if (state.user) {
+            return { user: { ...state.user, ...data } };
           }
           return {};
         }),

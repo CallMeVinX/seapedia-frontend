@@ -4,6 +4,7 @@ import { walletService, WalletResponse } from '@/services/walletService';
 import { addressService, AddressResponse } from '@/services/addressService';
 import { useAuthStore } from '@/hooks/useAuthStore';
 import { showToast } from '@/utils/toast';
+import { authService } from '@/services/authService';
 
 type ProfileTab = 'personal' | 'address' | 'wallet';
 
@@ -11,6 +12,7 @@ export const useBuyerProfile = () => {
   const { user, activeRole } = useAuthStore();
   const searchParams = useSearchParams();
   const urlTab = searchParams.get('tab') as ProfileTab;
+  const { updateUser } = useAuthStore();
   
   const [activeTab, setActiveTab] = useState<ProfileTab>(
     (urlTab === 'wallet' || urlTab === 'address' || urlTab === 'personal') ? urlTab : 'personal'
@@ -32,6 +34,17 @@ export const useBuyerProfile = () => {
   const [isLoadingAddresses, setIsLoadingAddresses] = useState(false);
   const [isAddingAddress, setIsAddingAddress] = useState(false);
   const [isDeletingId, setIsDeletingId] = useState<number | null>(null);
+
+  // Profile Edit state
+  const [isEditProfileOpen, setIsEditProfileOpen] = useState(false);
+  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
+  const [editProfileForm, setEditProfileForm] = useState({ full_name: '', avatar_url: '' });
+
+  useEffect(() => {
+    if (user) {
+      setEditProfileForm({ full_name: user.name, avatar_url: user.avatar_url || '' });
+    }
+  }, [user]);
 
   const loadWallet = useCallback(async () => {
     if (activeRole?.toUpperCase() !== 'BUYER') return;
@@ -119,6 +132,34 @@ export const useBuyerProfile = () => {
     }
   };
 
+  const handleUpdateProfile = async () => {
+    if (!editProfileForm.full_name.trim()) {
+      showToast.error('Gagal', 'Nama tidak boleh kosong.');
+      return;
+    }
+    
+    setIsUpdatingProfile(true);
+    try {
+      const data = await authService.updateProfile({
+        full_name: editProfileForm.full_name,
+        avatar_url: editProfileForm.avatar_url
+      });
+      
+      updateUser({
+        name: data.full_name,
+        avatar_url: data.avatar_url
+      });
+      
+      showToast.success('Berhasil', 'Profil berhasil diperbarui.');
+      setIsEditProfileOpen(false);
+    } catch (error: any) {
+      const msg = error.response?.data?.detail || 'Gagal memperbarui profil.';
+      showToast.error('Gagal', msg);
+    } finally {
+      setIsUpdatingProfile(false);
+    }
+  };
+
   return {
     activeTab,
     setActiveTab,
@@ -132,6 +173,12 @@ export const useBuyerProfile = () => {
     isAddingAddress,
     handleAddAddress,
     isDeletingId,
-    handleDeleteAddress
+    handleDeleteAddress,
+    isEditProfileOpen,
+    setIsEditProfileOpen,
+    isUpdatingProfile,
+    editProfileForm,
+    setEditProfileForm,
+    handleUpdateProfile
   };
 };
