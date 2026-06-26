@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/hooks/useAuthStore';
 import { useSellerDashboard } from '@/hooks/useSellerDashboard';
 import { StoreRegistrationForm } from '@/components/seller/StoreRegistrationForm';
-import { LayoutDashboard, Store, Package, Inbox, Loader2 } from 'lucide-react';
+import { LayoutDashboard, Store, Package, Inbox, Loader2, Tag } from 'lucide-react';
 import { EmptyState } from '@/components/ui/EmptyState';
 import Button from '@/components/ui/Button';
 import { RoleSwitcher } from '@/components/ui/RoleSwitcher';
@@ -16,6 +16,7 @@ const SELLER_NAVIGATION = [
   { name: 'Overview', href: '/seller/dashboard', icon: LayoutDashboard },
   { name: 'Profil Toko', href: '/seller/profile', icon: Store },
   { name: 'Produk Saya', href: '/seller/products', icon: Package },
+  { name: 'Kelola Promo', href: '/seller/promos', icon: Tag },
   { name: 'Kelola Pesanan', href: '/seller/orders', icon: Inbox },
 ];
 

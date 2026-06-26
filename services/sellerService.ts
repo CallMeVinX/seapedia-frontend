@@ -5,6 +5,7 @@ export interface StoreStatusResponse {
   has_store: boolean;
   store_name?: string;
   store_id?: number;
+  logo_url?: string;
 }
 
 export interface StoreCreateRequest {
@@ -37,6 +38,24 @@ export interface SellerProductResponse {
   image_url?: string;
   is_deleted: boolean;
 }
+export interface PromoCreateRequest {
+  name: string;
+  discount_percentage: number;
+  valid_from: string;
+  valid_until: string;
+  product_ids: number[];
+}
+
+export interface PromoResponse {
+  id: number;
+  store_id: number;
+  name: string;
+  discount_percentage: number;
+  valid_from: string;
+  valid_until: string;
+  is_active: boolean;
+  product_ids: number[];
+}
 
 export const sellerService = {
   getStoreStatus: async (): Promise<StoreStatusResponse> => {
@@ -46,6 +65,11 @@ export const sellerService = {
 
   createStore: async (data: StoreCreateRequest): Promise<StoreResponse> => {
     const response = await api.post('/seller/store', data);
+    return response.data;
+  },
+
+  updateStore: async (data: { store_name?: string; logo_url?: string }): Promise<StoreResponse> => {
+    const response = await api.put('/seller/store', data);
     return response.data;
   },
 
@@ -80,5 +104,25 @@ export const sellerService = {
 
   deleteProduct: async (productId: number): Promise<void> => {
     await api.delete(`/seller/products/${productId}`);
+  },
+
+  // Promos
+  getPromos: async (): Promise<PromoResponse[]> => {
+    const response = await api.get('/seller/promos');
+    return response.data;
+  },
+
+  createPromo: async (data: PromoCreateRequest): Promise<PromoResponse> => {
+    const response = await api.post('/seller/promos', data);
+    return response.data;
+  },
+
+  updatePromo: async (promoId: number, data: Partial<PromoCreateRequest> & { is_active?: boolean }): Promise<PromoResponse> => {
+    const response = await api.put(`/seller/promos/${promoId}`, data);
+    return response.data;
+  },
+
+  deletePromo: async (promoId: number): Promise<void> => {
+    await api.delete(`/seller/promos/${promoId}`);
   }
 };

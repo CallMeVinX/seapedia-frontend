@@ -27,12 +27,14 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
   const [stock, setStock] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [promoPrice, setPromoPrice] = useState('');
 
   useEffect(() => {
     if (initialData && isOpen) {
       setName(initialData.name);
       setDescription(initialData.description || '');
       setPrice(initialData.price.toString());
+      setPromoPrice(initialData.promo_price ? initialData.promo_price.toString() : '');
       setStock(initialData.stock.toString());
       const cat = categories.find(c => c.name === initialData.category_name);
       setCategoryId(cat ? cat.id.toString() : '');
@@ -46,6 +48,7 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     setName('');
     setDescription('');
     setPrice('');
+    setPromoPrice('');
     setStock('');
     setCategoryId('');
     setImageUrl('');
@@ -57,9 +60,10 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
       name: name.trim(),
       description: description.trim() || undefined,
       price: parseFloat(price) || 0,
+      promo_price: promoPrice ? parseFloat(promoPrice) : undefined,
       stock: parseInt(stock) || 0,
       category_id: parseInt(categoryId) || 0,
-      image_url: imageUrl || undefined
+      image_url: imageUrl
     }, initialData?.id);
     if (success) resetForm();
   };
@@ -149,6 +153,22 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
                 onChange={(e) => setPrice(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400"
                 placeholder="50000"
+                disabled={isSubmitting}
+              />
+            </div>
+            <div>
+              <label htmlFor="productPromoPrice" className="block text-sm font-bold text-slate-700 mb-1.5">
+                Harga Promo (Rp) <span className="text-slate-400 font-normal">(Opsional)</span>
+              </label>
+              <input
+                id="productPromoPrice"
+                type="number"
+                min="0"
+                step="100"
+                value={promoPrice}
+                onChange={(e) => setPromoPrice(e.target.value)}
+                className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400"
+                placeholder="45000"
                 disabled={isSubmitting}
               />
             </div>

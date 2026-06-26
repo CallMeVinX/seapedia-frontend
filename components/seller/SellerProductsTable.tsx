@@ -50,8 +50,15 @@ export const SellerProductsTable: React.FC<SellerProductsTableProps> = ({ produc
                 {product.category_name}
               </span>
               <div className="text-right">
-                <span className="text-xs text-slate-500 mr-2">Stok: <span className={`font-bold ${product.stock > 0 ? 'text-slate-900' : 'text-red-600'}`}>{product.stock}</span></span>
-                <span className="font-bold text-blue-950">{formatCurrency(product.price)}</span>
+                <span className="text-xs text-slate-500 mr-2 block mb-1">Stok: <span className={`font-bold ${product.stock > 0 ? 'text-slate-900' : 'text-red-600'}`}>{product.stock}</span></span>
+                {product.promo_price ? (
+                  <div className="flex flex-col items-end">
+                    <span className="text-[10px] text-slate-400 line-through">{formatCurrency(product.price)}</span>
+                    <span className="font-bold text-red-600">{formatCurrency(product.promo_price)}</span>
+                  </div>
+                ) : (
+                  <span className="font-bold text-blue-950">{formatCurrency(product.price)}</span>
+                )}
               </div>
             </div>
 
@@ -102,8 +109,15 @@ export const SellerProductsTable: React.FC<SellerProductsTableProps> = ({ produc
                     {product.category_name}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-right font-bold text-blue-950">
-                  {formatCurrency(product.price)}
+                <td className="px-6 py-4 text-right">
+                  {product.promo_price ? (
+                    <div className="flex flex-col items-end">
+                      <span className="text-[10px] text-slate-400 line-through">{formatCurrency(product.price)}</span>
+                      <span className="font-bold text-red-600">{formatCurrency(product.promo_price)}</span>
+                    </div>
+                  ) : (
+                    <span className="font-bold text-blue-950">{formatCurrency(product.price)}</span>
+                  )}
                 </td>
                 <td className="px-6 py-4 text-center">
                   <span className={`font-bold ${product.stock > 0 ? 'text-slate-900' : 'text-red-600'}`}>

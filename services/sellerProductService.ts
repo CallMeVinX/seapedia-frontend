@@ -11,6 +11,7 @@ export interface SellerProductResponse {
   name: string;
   description?: string;
   price: number;
+  promo_price?: number;
   stock: number;
   category_name: string;
   image_url?: string;
@@ -21,6 +22,7 @@ export interface ProductCreateRequest {
   name: string;
   description?: string;
   price: number;
+  promo_price?: number;
   stock: number;
   category_id: number;
   image_url?: string;
@@ -51,15 +53,15 @@ export const sellerProductService = {
     await api.delete(`/seller/products/${productId}`);
   },
 
-  uploadProductImage: async (file: File): Promise<{url: string}> => {
+  uploadProductImage: async (file: File, type: 'product' | 'store' | 'user' = 'product'): Promise<{url: string}> => {
     const formData = new FormData();
     formData.append('file', file);
     
-    // api (axios instance) automatically sets correct Content-Type boundary when sending FormData
-    const response = await api.post('/seller/products/image', formData, {
+    // api (axios instance) automatically adds auth header
+    const response = await api.post(`/seller/products/image?type=${type}`, formData, {
       headers: {
         'Content-Type': 'multipart/form-data',
-      }
+      },
     });
     return response.data;
   }

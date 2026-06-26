@@ -2,9 +2,21 @@ import api from './api';
 import { Product } from './productService';
 
 export interface AdminStatsResponse {
-  users: number;
-  orders: number;
-  overdue_orders: number;
+  users_count: number;
+  stores_count: number;
+  products_count: number;
+  orders_count: number;
+  delivery_jobs_count: number;
+  overdue_orders_count: number;
+  recent_orders: {
+    id: number;
+    store_name: string;
+    buyer_name: string;
+    current_status: string;
+    final_total: number;
+    created_at: string;
+  }[];
+  simulated_date: string;
 }
 
 export interface OrderQueueItem {
