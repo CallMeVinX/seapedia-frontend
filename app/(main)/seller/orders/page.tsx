@@ -104,7 +104,8 @@ function SellerOrdersContent() {
                           order.current_status === 'Menunggu Pengirim' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
                           order.current_status === 'Sedang Dikirim' ? 'bg-blue-50 text-blue-700 border-blue-200' :
                           order.current_status === 'Pesanan Selesai' ? 'bg-green-50 text-green-700 border-green-200' :
-                          (order.current_status === 'Dikembalikan' || order.current_status === 'Dibatalkan') ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                          order.current_status === 'Dikembalikan' ? 'bg-slate-100 text-slate-700 border-slate-300' :
+                          order.current_status === 'Dibatalkan' ? 'bg-rose-50 text-rose-700 border-rose-200' :
                           'bg-slate-50 text-slate-700 border-slate-200'
                     }`}>
                       {order.current_status}
@@ -169,7 +170,8 @@ function SellerOrdersContent() {
                           order.current_status === 'Menunggu Pengirim' ? 'bg-indigo-50 text-indigo-700 border-indigo-200' :
                           order.current_status === 'Sedang Dikirim' ? 'bg-blue-50 text-blue-700 border-blue-200' :
                           order.current_status === 'Pesanan Selesai' ? 'bg-green-50 text-green-700 border-green-200' :
-                          (order.current_status === 'Dikembalikan' || order.current_status === 'Dibatalkan') ? 'bg-rose-50 text-rose-700 border-rose-200' :
+                          order.current_status === 'Dikembalikan' ? 'bg-slate-100 text-slate-700 border-slate-300' :
+                          order.current_status === 'Dibatalkan' ? 'bg-rose-50 text-rose-700 border-rose-200' :
                           'bg-slate-50 text-slate-700 border-slate-200'
                         }`}>
                           {order.current_status}
