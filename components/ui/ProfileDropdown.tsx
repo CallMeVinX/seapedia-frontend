@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useAuthStore } from '@/hooks/useAuthStore';
-import { ChevronDown, LogOut, Settings, Wallet, Package, MapPin, Store, Truck } from 'lucide-react';
+import { ChevronDown, LogOut, Settings, Wallet, Package, MapPin, Store, Truck, Users } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { authService } from '@/services/authService';
 import { RoleSwitcher } from './RoleSwitcher';
@@ -11,7 +11,7 @@ import Modal from '@/components/ui/Modal';
 import Button from '@/components/ui/Button';
 
 export const ProfileDropdown = () => {
-  const { user, activeRole, ownedRoles, setActiveRole, logout, addOwnedRole } = useAuthStore();
+  const { user, activeRole, ownedRoles, setActiveRole, logout, addOwnedRole, setRoleModalOpen } = useAuthStore();
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [showSellerTerms, setShowSellerTerms] = useState(false);
   const [showDriverTerms, setShowDriverTerms] = useState(false);
@@ -118,6 +118,16 @@ export const ProfileDropdown = () => {
               <Settings className="h-4 w-4 text-slate-400" />
               Profile Settings
             </button>
+            
+            {ownedRoles.length > 1 && (
+              <button 
+                onClick={() => { setDropdownOpen(false); setRoleModalOpen(true); }} 
+                className="w-full sm:hidden flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-indigo-700 hover:bg-indigo-50 hover:text-indigo-800 transition-colors text-left"
+              >
+                <Users className="h-4 w-4 text-indigo-500" />
+                Ganti Peran (Role)
+              </button>
+            )}
             
             {(!ownedRoles.includes('SELLER') || !ownedRoles.includes('DRIVER')) && (
               <div className="h-px bg-slate-100 my-1 mx-2"></div>
