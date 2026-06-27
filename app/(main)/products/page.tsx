@@ -183,7 +183,7 @@ function ProductsContent() {
         </div>
 
         {/* Content Layout */}
-        <div className="flex gap-8 items-start">
+        <div className="flex flex-col lg:flex-row gap-8 items-start w-full">
           
           {/* 1. Sidebar Filters (Desktop) */}
           <aside className="w-64 shrink-0 bg-white border border-slate-200 rounded-2xl p-6 shadow-sm hidden lg:block sticky top-20">
@@ -264,7 +264,7 @@ function ProductsContent() {
           </aside>
 
           {/* 2. Main Product Area */}
-          <main className="flex-1">
+          <main className="flex-1 min-w-0 w-full">
             
             {/* Top Bar Info & Sort */}
             <div className="flex items-center justify-between mb-6">
