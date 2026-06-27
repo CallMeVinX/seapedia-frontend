@@ -3,7 +3,8 @@ import { useAuthStore } from '@/hooks/useAuthStore';
 
 // Create an Axios instance
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL,
+  // Use relative URL to force request through Next.js rewrite proxy
+  baseURL: '/api',
   withCredentials: true, // Crucial for sending cookies cross-origin
   headers: {
     'Content-Type': 'application/json',
