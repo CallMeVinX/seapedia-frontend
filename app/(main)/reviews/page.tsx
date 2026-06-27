@@ -33,7 +33,7 @@ export default function ReviewsPage() {
     : 0;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-blue-200">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans selection:bg-blue-200 overflow-x-hidden">
 
       <main className="flex-grow pt-24 pb-20 relative">
         {/* Background decorations */}
