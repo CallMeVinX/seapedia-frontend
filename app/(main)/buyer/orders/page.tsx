@@ -10,7 +10,7 @@ import { EmptyState } from "@/components/ui/EmptyState";
 import { PaymentModal } from "@/components/order/PaymentModal";
 import { showToast } from "@/utils/toast";
 
-const TABS = ["Semua", "Menunggu Pembayaran", "Sedang Dikemas", "Sedang Dikirim", "Pesanan Selesai", "Dibatalkan"];
+const TABS = ["Semua", "Menunggu Pembayaran", "Sedang Dikemas", "Sedang Dikirim", "Pesanan Selesai", "Dibatalkan/Retur"];
 
 export default function BuyerOrdersPage() {
   const { activeRole } = useAuthStore();
@@ -40,7 +40,8 @@ export default function BuyerOrdersPage() {
 
   const filteredOrders = useMemo(() => {
     return orders.filter(order => {
-      const matchesTab = activeTab === "Semua" || order.current_status === activeTab;
+      const matchesTab = activeTab === "Semua" || 
+                         (activeTab === "Dibatalkan/Retur" ? (order.current_status === "Dibatalkan" || order.current_status === "Dikembalikan") : order.current_status === activeTab);
       const matchesSearch = order.store_name.toLowerCase().includes(searchQuery.toLowerCase()) || 
                             order.items.some(item => item.product_name.toLowerCase().includes(searchQuery.toLowerCase()));
       return matchesTab && matchesSearch;
