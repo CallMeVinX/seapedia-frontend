@@ -33,8 +33,8 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     if (initialData && isOpen) {
       setName(initialData.name);
       setDescription(initialData.description || '');
-      setPrice(initialData.price.toString());
-      setPromoPrice(initialData.promo_price ? initialData.promo_price.toString() : '');
+      setPrice(initialData.price.toLocaleString('id-ID'));
+      setPromoPrice(initialData.promo_price ? initialData.promo_price.toLocaleString('id-ID') : '');
       setStock(initialData.stock.toString());
       const cat = categories.find(c => c.name === initialData.category_name);
       setCategoryId(cat ? cat.id.toString() : '');
@@ -59,8 +59,8 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
     const success = await onSubmit({
       name: name.trim(),
       description: description.trim() || undefined,
-      price: parseFloat(price) || 0,
-      promo_price: promoPrice ? parseFloat(promoPrice) : undefined,
+      price: parseFloat(price.replace(/\./g, '')) || 0,
+      promo_price: promoPrice ? parseFloat(promoPrice.replace(/\./g, '')) : undefined,
       stock: parseInt(stock) || 0,
       category_id: parseInt(categoryId) || 0,
       image_url: imageUrl
@@ -145,14 +145,19 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
               </label>
               <input
                 id="productPrice"
-                type="number"
+                type="text"
                 required
-                min="0"
-                step="100"
                 value={price}
-                onChange={(e) => setPrice(e.target.value)}
+                onChange={(e) => {
+                  const rawValue = e.target.value.replace(/\D/g, '');
+                  if (!rawValue) {
+                    setPrice('');
+                    return;
+                  }
+                  setPrice(parseInt(rawValue, 10).toLocaleString('id-ID'));
+                }}
                 className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400"
-                placeholder="50000"
+                placeholder="50.000"
                 disabled={isSubmitting}
               />
             </div>
@@ -162,13 +167,18 @@ export const ProductFormModal: React.FC<ProductFormModalProps> = ({
               </label>
               <input
                 id="productPromoPrice"
-                type="number"
-                min="0"
-                step="100"
+                type="text"
                 value={promoPrice}
-                onChange={(e) => setPromoPrice(e.target.value)}
+                onChange={(e) => {
+                  const rawValue = e.target.value.replace(/\D/g, '');
+                  if (!rawValue) {
+                    setPromoPrice('');
+                    return;
+                  }
+                  setPromoPrice(parseInt(rawValue, 10).toLocaleString('id-ID'));
+                }}
                 className="w-full px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400"
-                placeholder="45000"
+                placeholder="45.000"
                 disabled={isSubmitting}
               />
             </div>
