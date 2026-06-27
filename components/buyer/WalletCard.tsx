@@ -27,7 +27,8 @@ export const WalletCard: React.FC<WalletCardProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const amount = parseFloat(customAmount);
+    // Hapus titik sebelum parsing ke number
+    const amount = parseFloat(customAmount.replace(/\./g, ''));
     if (amount > 0) {
       onTopUp(amount);
       setCustomAmount('');
@@ -94,18 +95,26 @@ export const WalletCard: React.FC<WalletCardProps> = ({
         {/* Custom Amount */}
         <form onSubmit={handleSubmit} className="flex gap-3">
           <input
-            type="number"
-            min="1000"
-            max="10000000"
+            type="text"
             value={customAmount}
-            onChange={(e) => setCustomAmount(e.target.value)}
+            onChange={(e) => {
+              // Hapus semua karakter kecuali angka
+              const rawValue = e.target.value.replace(/\D/g, '');
+              if (!rawValue) {
+                setCustomAmount('');
+                return;
+              }
+              // Format angka dengan pemisah ribuan (titik)
+              const formatted = parseInt(rawValue, 10).toLocaleString('id-ID');
+              setCustomAmount(formatted);
+            }}
             placeholder="Jumlah lainnya..."
             disabled={isTopingUp}
             className="flex-1 px-4 py-3 rounded-xl border border-slate-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-slate-400"
           />
           <button
             type="submit"
-            disabled={isTopingUp || !customAmount || parseFloat(customAmount) <= 0}
+            disabled={isTopingUp || !customAmount || parseFloat(customAmount.replace(/\./g, '')) <= 0}
             className="px-6 py-3 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
           >
             {isTopingUp ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Top-up'}
