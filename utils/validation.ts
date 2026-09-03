@@ -21,6 +21,11 @@ export function validatePhone(phone: string): string {
 export function validatePassword(password: string): string {
   if (!password) return "Password is required.";
   if (password.length < 8) return "Password must be at least 8 characters long.";
+  // Mirrors the backend rule. Without it the form accepts a password the API then rejects
+  // with a 422 that the user has no way to act on.
+  if (!/[a-zA-Z]/.test(password) || !/\d/.test(password)) {
+    return "Password must contain both letters and numbers.";
+  }
   return "";
 }
 
