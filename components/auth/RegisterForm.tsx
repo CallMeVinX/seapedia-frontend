@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, FormEvent, ChangeEvent, FocusEvent } from "react";
+import { AxiosError } from "axios";
 import Link from "next/link";
 import { User, Mail, Phone, Lock, Eye, EyeOff, ArrowRight } from "lucide-react";
 import InputField from "@/components/ui/InputField";
@@ -12,6 +13,8 @@ import { validateField } from "@/utils/validation";
 import { authService } from "@/services/authService";
 import { showToast } from "@/utils/toast";
 import { TERMS_CONTENT, PRIVACY_CONTENT } from "./authContent";
+import OtpVerificationStep from "./OtpVerificationStep";
+import { useRegistrationOtp } from "@/hooks/useRegistrationOtp";
 
 interface RegisterFormState {
   [key: string]: string | boolean;
@@ -26,6 +29,13 @@ interface RegisterFormState {
 
 export default function RegisterForm() {
   const router = useRouter();
+
+  // The OTP phase is owned by a dedicated hook so this component keeps handling only the
+  // details form; it hands over as soon as the backend has staged the registration.
+  const otp = useRegistrationOtp(() => {
+    showToast.success("Berhasil", "Akun Anda telah aktif. Silakan masuk.");
+    router.push("/login");
+  });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isTermsOpen, setIsTermsOpen] = useState(false);
@@ -102,14 +112,24 @@ export default function RegisterForm() {
     try {
       const fullName = `${form.firstName} ${form.lastName}`.trim();
       // We are omitting the phone field in this API request since backend doesn't support it yet
-      await authService.register(fullName, form.email as string, form.password as string);
-      
-      showToast.success("Berhasil", "Registrasi akun berhasil!");
-      router.push("/login");
-    } catch (err: any) {
-      if (err.response?.data?.detail) {
-        setError(err.response.data.detail);
-        showToast.error("Gagal", err.response.data.detail);
+      const challenge = await authService.register(
+        fullName,
+        form.email as string,
+        form.password as string
+      );
+
+      // No account exists yet. Registration only completes once the emailed code is redeemed,
+      // so the user moves to the verification step instead of being sent to the login page.
+      otp.beginChallenge(form.email as string, {
+        expiresInSeconds: challenge.expires_in_seconds,
+        resendAvailableInSeconds: challenge.resend_available_in_seconds,
+      });
+      showToast.success("Kode terkirim", "Silakan cek email Anda untuk kode verifikasi.");
+    } catch (err) {
+      const detail = (err as AxiosError<{ detail?: string }>).response?.data?.detail;
+      if (detail) {
+        setError(detail);
+        showToast.error("Gagal", detail);
       } else {
         setError("An unexpected error occurred during registration. Please try again.");
         showToast.error("Gagal", "Terjadi kesalahan saat registrasi. Silakan coba lagi.");
@@ -117,6 +137,25 @@ export default function RegisterForm() {
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  if (otp.step === "otp") {
+    return (
+      <OtpVerificationStep
+        email={otp.email}
+        code={otp.code}
+        error={otp.error}
+        isVerifying={otp.isVerifying}
+        isResending={otp.isResending}
+        resendIn={otp.resendIn}
+        expiresIn={otp.expiresIn}
+        isExpired={otp.isExpired}
+        onCodeChange={otp.handleCodeChange}
+        onVerify={otp.handleVerify}
+        onResend={otp.handleResend}
+        onBack={otp.handleBackToForm}
+      />
+    );
   }
 
   return (
