@@ -6,7 +6,7 @@ import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import InputField from "@/components/ui/InputField";
 import CheckboxField from "@/components/ui/CheckboxField";
 import Button from "@/components/ui/Button";
-import { validateField } from "@/utils/validation";
+import { validateLoginField } from "@/utils/validation";
 
 import { useRouter } from "next/navigation";
 import { useAuthStore } from "@/hooks/useAuthStore";
@@ -36,7 +36,7 @@ export default function LoginForm() {
   function handleBlur(e: FocusEvent<HTMLInputElement>) {
     const { name, value } = e.target;
     setTouched((prev) => ({ ...prev, [name]: true }));
-    const errorMsg = validateField(name, value);
+    const errorMsg = validateLoginField(name, value);
     setErrors((prev) => ({ ...prev, [name]: errorMsg }));
   }
 
@@ -50,7 +50,7 @@ export default function LoginForm() {
     setForm(updatedForm);
 
     if (type !== "checkbox" && (touched[name] || errors[name])) {
-      const errorMsg = validateField(name, value, updatedForm);
+      const errorMsg = validateLoginField(name, value);
       setErrors((prev) => ({ ...prev, [name]: errorMsg }));
     }
   }
@@ -64,7 +64,7 @@ export default function LoginForm() {
 
     fieldsToValidate.forEach((field) => {
       const val = form[field as keyof LoginFormState];
-      newErrors[field] = validateField(field, typeof val === "boolean" ? "" : val);
+      newErrors[field] = validateLoginField(field, typeof val === "boolean" ? "" : val);
       newTouched[field] = true;
     });
 

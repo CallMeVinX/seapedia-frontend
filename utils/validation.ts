@@ -41,7 +41,19 @@ export function validateAgree(agree: boolean | string): string {
 }
 
 /**
- * Generic field validator wrapper for auth forms.
+ * Presence check for the login password field.
+ *
+ * Login must never re-apply the registration complexity rules. Those rules govern the
+ * creation of a new secret; at login the user is entering an existing one, and the backend is
+ * the sole authority on whether it is correct. Enforcing complexity here would lock out every
+ * account whose password predates the current policy.
+ */
+export function validateLoginPassword(password: string): string {
+  return password ? "" : "Password is required.";
+}
+
+/**
+ * Field validator for the registration form, where password complexity is enforced.
  * Pass the full form object as context for confirmPassword matching.
  */
 export function validateField(name: string, value: string, context?: Record<string, string | boolean>): string {
@@ -61,4 +73,17 @@ export function validateField(name: string, value: string, context?: Record<stri
     default:
       return "";
   }
+}
+
+/**
+ * Field validator for the login form.
+ *
+ * Delegates to the shared validators for everything except the password, which is only checked
+ * for presence — see validateLoginPassword for why complexity is not re-enforced at login.
+ */
+export function validateLoginField(name: string, value: string): string {
+  if (name === "password") {
+    return validateLoginPassword(value);
+  }
+  return validateField(name, value);
 }
