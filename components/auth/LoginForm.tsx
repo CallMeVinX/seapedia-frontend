@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, FormEvent, ChangeEvent, FocusEvent } from "react";
+import { AxiosError } from "axios";
 import Link from "next/link";
 import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import InputField from "@/components/ui/InputField";
@@ -9,7 +10,7 @@ import Button from "@/components/ui/Button";
 import { validateLoginField } from "@/utils/validation";
 
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/hooks/useAuthStore";
+import { useAuthStore, type Role } from "@/hooks/useAuthStore";
 import { authService } from "@/services/authService";
 import { showToast } from "@/utils/toast";
 
@@ -80,18 +81,20 @@ export default function LoginForm() {
     setApiError(null);
 
     try {
-      const response = await authService.login(form.email, form.password, form.remember);
-      
-      // Fetch user details including roles
+      // Login sets the auth cookie server-side; the response body is not needed here.
+      await authService.login(form.email, form.password, form.remember);
+
       const userMe = await authService.getMe();
-      
+
       const loggedUser = {
         id: userMe.id,
         name: userMe.full_name,
         email: userMe.email,
       };
-      
-      const roles = userMe.roles as any[];
+
+      // The backend returns role names the store's Role union already covers; narrow the
+      // string[] response to Role[] rather than widening the store to accept arbitrary strings.
+      const roles = userMe.roles as Role[];
       
       // If user only has 1 role, automatically select it so the token gets the active_role claim
       if (roles.length === 1) {
@@ -118,10 +121,11 @@ export default function LoginForm() {
         router.push("/");
       }
 
-    } catch (err: any) {
-      if (err.response?.data?.detail) {
-        setApiError(err.response.data.detail);
-        showToast.error("Gagal", err.response.data.detail);
+    } catch (err) {
+      const detail = (err as AxiosError<{ detail?: string }>).response?.data?.detail;
+      if (detail) {
+        setApiError(detail);
+        showToast.error("Gagal", detail);
       } else {
         setApiError("An unexpected error occurred. Please try again.");
         showToast.error("Gagal", "Terjadi kesalahan yang tidak terduga.");
