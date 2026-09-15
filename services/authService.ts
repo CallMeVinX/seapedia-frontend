@@ -19,13 +19,6 @@ export interface UserProfileResponse {
   };
 }
 
-/**
- * Returned by every registration entry point.
- *
- * The message is deliberately identical whether or not the address already has an account,
- * so the UI must never treat it as a signal about account existence. The timings drive the
- * OTP screen's expiry notice and resend countdown.
- */
 export interface RegistrationChallengeResponse {
   message: string;
   expires_in_seconds: number;
@@ -36,6 +29,16 @@ export interface VerifyRegistrationResponse {
   message: string;
   user_id: string;
   email: string;
+}
+
+export interface ForgotPasswordResponse {
+  message: string;
+  expires_in_seconds: number;
+  resend_available_in_seconds: number;
+}
+
+export interface ResetPasswordResponse {
+  message: string;
 }
 
 export const authService = {
@@ -93,6 +96,36 @@ export const authService = {
   /** Requests a replacement code. Rejected with 429 while the cooldown is still running. */
   resendRegistrationOtp: async (email: string): Promise<RegistrationChallengeResponse> => {
     const response = await api.post<RegistrationChallengeResponse>('/auth/register/resend', {
+      email,
+    });
+    return response.data;
+  },
+
+  /** Initiates password reset for a registered email address. */
+  forgotPassword: async (email: string): Promise<ForgotPasswordResponse> => {
+    const response = await api.post<ForgotPasswordResponse>('/auth/forgot-password', {
+      email,
+    });
+    return response.data;
+  },
+
+  /** Verifies recovery OTP and sets a replacement password. */
+  resetPassword: async (
+    email: string,
+    code: string,
+    new_password: string
+  ): Promise<ResetPasswordResponse> => {
+    const response = await api.post<ResetPasswordResponse>('/auth/reset-password', {
+      email,
+      code,
+      new_password,
+    });
+    return response.data;
+  },
+
+  /** Requests a replacement OTP for an ongoing password reset challenge. */
+  resendResetPasswordOtp: async (email: string): Promise<ForgotPasswordResponse> => {
+    const response = await api.post<ForgotPasswordResponse>('/auth/reset-password/resend', {
       email,
     });
     return response.data;
