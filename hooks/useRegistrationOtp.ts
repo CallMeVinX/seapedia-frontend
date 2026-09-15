@@ -38,14 +38,100 @@ function readRetryAfter(error: unknown, fallbackSeconds: number): number {
 }
 
 /**
- * Owns the OTP phase of registration: which step is showing, the code being typed, the resend
- * countdown, and the calls to the auth service.
+ * Manages the OTP verification phase of registration: UI step transition,
+ * numeric code state, resend cooldown timer, and API communication.
  *
- * State lives here rather than in the form so the presentational components stay free of API
- * knowledge, per the Logical Agent boundary. The caller supplies the email and timings it got
- * back from the register call; this hook never assumes an account exists, because the backend
- * answers identically for addresses that are already taken.
+ * State lives in this logical agent rather than the presentation form to keep
+ * presentation components decoupled from service logic.
+ *
+ * Sessional state is persisted in sessionStorage and synchronized against
+ * wall-clock timestamps to survive page refreshes without resetting expiry timers.
  */
+
+interface StoredOtpSession {
+  email: string;
+  expiresAt: number; // Unix timestamp in ms
+  resendAvailableAt: number; // Unix timestamp in ms
+}
+
+const OTP_SESSION_KEY = "seapedia_registration_otp_session";
+const MAX_STALE_SESSION_MS = 15 * 60 * 1000; // 15 minutes post-expiry grace period
+
+function saveOtpSession(email: string, expiresAt: number, resendAvailableAt: number): void {
+  if (typeof window === "undefined") return;
+  try {
+    const session: StoredOtpSession = {
+      email,
+      expiresAt,
+      resendAvailableAt,
+    };
+    sessionStorage.setItem(OTP_SESSION_KEY, JSON.stringify(session));
+  } catch {
+    // sessionStorage may be unavailable or restricted (e.g. private mode)
+  }
+}
+
+function updateResendInSession(resendAvailableAt: number): void {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = sessionStorage.getItem(OTP_SESSION_KEY);
+    if (!raw) return;
+    const session = JSON.parse(raw) as StoredOtpSession;
+    session.resendAvailableAt = resendAvailableAt;
+    sessionStorage.setItem(OTP_SESSION_KEY, JSON.stringify(session));
+  } catch {
+    // Ignore errors
+  }
+}
+
+function clearOtpSession(): void {
+  if (typeof window === "undefined") return;
+  try {
+    sessionStorage.removeItem(OTP_SESSION_KEY);
+  } catch {
+    // Ignore errors
+  }
+}
+
+function loadOtpSession(): {
+  email: string;
+  expiresAt: number;
+  resendAvailableAt: number;
+  expiresIn: number;
+  resendIn: number;
+} | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = sessionStorage.getItem(OTP_SESSION_KEY);
+    if (!raw) return null;
+    const session = JSON.parse(raw) as StoredOtpSession;
+    if (!session?.email || typeof session.expiresAt !== "number") {
+      clearOtpSession();
+      return null;
+    }
+
+    const now = Date.now();
+    if (now - session.expiresAt > MAX_STALE_SESSION_MS) {
+      clearOtpSession();
+      return null;
+    }
+
+    const expiresIn = Math.max(0, Math.ceil((session.expiresAt - now) / 1000));
+    const resendIn = Math.max(0, Math.ceil((session.resendAvailableAt - now) / 1000));
+
+    return {
+      email: session.email,
+      expiresAt: session.expiresAt,
+      resendAvailableAt: session.resendAvailableAt,
+      expiresIn,
+      resendIn,
+    };
+  } catch {
+    clearOtpSession();
+    return null;
+  }
+}
+
 export function useRegistrationOtp(onVerified?: (email: string) => void) {
   const [step, setStep] = useState<"form" | "otp">("form");
   const [email, setEmail] = useState("");
@@ -56,18 +142,34 @@ export function useRegistrationOtp(onVerified?: (email: string) => void) {
   const [resendIn, setResendIn] = useState(0);
   const [expiresIn, setExpiresIn] = useState(0);
 
+  const expiresAtRef = useRef<number>(0);
+  const resendAvailableAtRef = useRef<number>(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Restore pending OTP session from sessionStorage on client mount
   useEffect(() => {
-    // A single ticker drives both counters. Clearing it on unmount matters because the user
-    // can navigate away mid-countdown, and a stray interval would keep setting state on a
-    // component that no longer exists.
+    const session = loadOtpSession();
+    if (session) {
+      expiresAtRef.current = session.expiresAt;
+      resendAvailableAtRef.current = session.resendAvailableAt;
+      setEmail(session.email);
+      setExpiresIn(session.expiresIn);
+      setResendIn(session.resendIn);
+      setStep("otp");
+    }
+  }, []);
+
+  useEffect(() => {
     if (step !== "otp") return;
 
-    intervalRef.current = setInterval(() => {
-      setResendIn((prev) => (prev > 0 ? prev - 1 : 0));
-      setExpiresIn((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
+    const tick = () => {
+      const now = Date.now();
+      setExpiresIn(Math.max(0, Math.ceil((expiresAtRef.current - now) / 1000)));
+      setResendIn(Math.max(0, Math.ceil((resendAvailableAtRef.current - now) / 1000)));
+    };
+
+    tick();
+    intervalRef.current = setInterval(tick, 1000);
 
     return () => {
       if (intervalRef.current) clearInterval(intervalRef.current);
@@ -77,12 +179,21 @@ export function useRegistrationOtp(onVerified?: (email: string) => void) {
 
   /** Moves the flow to the code screen once a registration has been staged server-side. */
   const beginChallenge = useCallback((targetEmail: string, timings: ChallengeTimings) => {
+    const now = Date.now();
+    const expiresAt = now + timings.expiresInSeconds * 1000;
+    const resendAvailableAt = now + timings.resendAvailableInSeconds * 1000;
+
+    expiresAtRef.current = expiresAt;
+    resendAvailableAtRef.current = resendAvailableAt;
+
     setEmail(targetEmail);
     setCode("");
     setError(null);
     setExpiresIn(timings.expiresInSeconds);
     setResendIn(timings.resendAvailableInSeconds);
     setStep("otp");
+
+    saveOtpSession(targetEmail, expiresAt, resendAvailableAt);
   }, []);
 
   const handleCodeChange = useCallback((value: string) => {
@@ -97,6 +208,7 @@ export function useRegistrationOtp(onVerified?: (email: string) => void) {
     setError(null);
     try {
       await authService.verifyRegistration(email, code);
+      clearOtpSession();
       onVerified?.(email);
     } catch (err) {
       setError(readApiError(err));
@@ -115,12 +227,25 @@ export function useRegistrationOtp(onVerified?: (email: string) => void) {
     setError(null);
     try {
       const result = await authService.resendRegistrationOtp(email);
+      const now = Date.now();
+      const expiresAt = now + result.expires_in_seconds * 1000;
+      const resendAvailableAt = now + result.resend_available_in_seconds * 1000;
+
+      expiresAtRef.current = expiresAt;
+      resendAvailableAtRef.current = resendAvailableAt;
+
       setExpiresIn(result.expires_in_seconds);
       setResendIn(result.resend_available_in_seconds);
       setCode("");
+
+      saveOtpSession(email, expiresAt, resendAvailableAt);
     } catch (err) {
       setError(readApiError(err));
-      setResendIn(readRetryAfter(err, 60));
+      const retrySeconds = readRetryAfter(err, 60);
+      const resendAvailableAt = Date.now() + retrySeconds * 1000;
+      resendAvailableAtRef.current = resendAvailableAt;
+      setResendIn(retrySeconds);
+      updateResendInSession(resendAvailableAt);
     } finally {
       setIsResending(false);
     }
@@ -128,6 +253,9 @@ export function useRegistrationOtp(onVerified?: (email: string) => void) {
 
   /** Returns to the details form, e.g. when the user notices a typo in their address. */
   const handleBackToForm = useCallback(() => {
+    clearOtpSession();
+    expiresAtRef.current = 0;
+    resendAvailableAtRef.current = 0;
     setStep("form");
     setCode("");
     setError(null);

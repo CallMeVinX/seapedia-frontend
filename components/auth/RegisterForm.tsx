@@ -128,8 +128,17 @@ export default function RegisterForm() {
     } catch (err) {
       const detail = (err as AxiosError<{ detail?: string }>).response?.data?.detail;
       if (detail) {
-        setError(detail);
-        showToast.error("Gagal", detail);
+        const isDuplicateEmail =
+          detail.toLowerCase().includes("email has been used") ||
+          detail.toLowerCase().includes("email sudah terdaftar");
+
+        const displayMessage = isDuplicateEmail ? "Email has been used" : detail;
+
+        setError(displayMessage);
+        if (isDuplicateEmail) {
+          setErrors((prev) => ({ ...prev, email: displayMessage }));
+        }
+        showToast.error("Gagal", displayMessage);
       } else {
         setError("An unexpected error occurred during registration. Please try again.");
         showToast.error("Gagal", "Terjadi kesalahan saat registrasi. Silakan coba lagi.");
@@ -137,6 +146,13 @@ export default function RegisterForm() {
     } finally {
       setIsSubmitting(false);
     }
+  }
+
+  function handleBackFromOtp() {
+    if (otp.email && !form.email) {
+      setForm((prev) => ({ ...prev, email: otp.email }));
+    }
+    otp.handleBackToForm();
   }
 
   if (otp.step === "otp") {
@@ -153,7 +169,7 @@ export default function RegisterForm() {
         onCodeChange={otp.handleCodeChange}
         onVerify={otp.handleVerify}
         onResend={otp.handleResend}
-        onBack={otp.handleBackToForm}
+        onBack={handleBackFromOtp}
       />
     );
   }
@@ -166,9 +182,18 @@ export default function RegisterForm() {
       </div>
 
       {error && (
-        <p role="alert" className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">
-          {error}
-        </p>
+        <div role="alert" className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+          <p>{error}</p>
+          {(error.toLowerCase().includes("email has been used") ||
+            error.toLowerCase().includes("email sudah terdaftar")) && (
+            <p className="mt-1 text-xs">
+              Sudah memiliki akun?{" "}
+              <Link href="/login" className="font-semibold underline hover:text-red-900">
+                Masuk di sini
+              </Link>
+            </p>
+          )}
+        </div>
       )}
 
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
