@@ -37,6 +37,12 @@ export interface ForgotPasswordResponse {
   resend_available_in_seconds: number;
 }
 
+export interface VerifyResetCodeResponse {
+  message: string;
+  reset_token: string;
+  expires_in_seconds: number;
+}
+
 export interface ResetPasswordResponse {
   message: string;
 }
@@ -109,17 +115,41 @@ export const authService = {
     return response.data;
   },
 
-  /** Verifies recovery OTP and sets a replacement password. */
-  resetPassword: async (
-    email: string,
-    code: string,
-    new_password: string
-  ): Promise<ResetPasswordResponse> => {
-    const response = await api.post<ResetPasswordResponse>('/auth/reset-password', {
+  /**
+   * Tahap 2: Memverifikasi kode PIN 6 digit ke backend sebelum membuka form ganti password baru.
+   * Menghasilkan reset_token jika kode valid.
+   */
+  verifyResetCode: async (email: string, code: string): Promise<VerifyResetCodeResponse> => {
+    const response = await api.post<VerifyResetCodeResponse>('/auth/reset-password/verify', {
       email,
       code,
-      new_password,
     });
+    return response.data;
+  },
+
+  /**
+   * Tahap 3: Memperbarui kata sandi menggunakan reset_token (rekomendasi best-practice)
+   * atau kombinasi email + code (backward-compatibility).
+   */
+  resetPassword: async (
+    tokenOrEmail: string,
+    newPasswordOrCode: string,
+    newPasswordLegacy?: string
+  ): Promise<ResetPasswordResponse> => {
+    let payload: Record<string, string>;
+    if (newPasswordLegacy !== undefined) {
+      payload = {
+        email: tokenOrEmail,
+        code: newPasswordOrCode,
+        new_password: newPasswordLegacy,
+      };
+    } else {
+      payload = {
+        reset_token: tokenOrEmail,
+        new_password: newPasswordOrCode,
+      };
+    }
+    const response = await api.post<ResetPasswordResponse>('/auth/reset-password', payload);
     return response.data;
   },
 

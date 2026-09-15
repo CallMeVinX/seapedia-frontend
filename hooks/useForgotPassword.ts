@@ -8,7 +8,7 @@ import { authService } from "@/services/authService";
  * Workflow stages for account password recovery:
  * 1. "email": User specifies their account address to trigger OTP challenge.
  * 2. "otp": User enters the 6-digit verification code sent to their mailbox.
- * 3. "new-password": User configures and confirms their replacement password.
+ * 3. "new-password": User configures and confirms their replacement password (only after PIN verified).
  * 4. "success": Confirmation screen directing the user to sign in.
  */
 export type ForgotPasswordStep = "email" | "otp" | "new-password" | "success";
@@ -127,6 +127,7 @@ export function useForgotPassword() {
   const [step, setStep] = useState<ForgotPasswordStep>("email");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
+  const [resetToken, setResetToken] = useState<string | null>(null);
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -224,6 +225,7 @@ export function useForgotPassword() {
       setExpiresIn(challenge.expires_in_seconds);
       setResendIn(challenge.resend_available_in_seconds);
       setCode("");
+      setResetToken(null);
       setNewPassword("");
       setConfirmPassword("");
       setStep("otp");
@@ -242,8 +244,10 @@ export function useForgotPassword() {
 
   /**
    * Phase 2: Progress from OTP entry to new password configuration.
+   * Wajib memverifikasi kode PIN 6 digit ke backend terlebih dahulu.
+   * Form ganti kata sandi baru HANYA akan muncul jika verifikasi backend berhasil.
    */
-  const handleProceedToNewPassword = useCallback(() => {
+  const handleProceedToNewPassword = useCallback(async () => {
     if (code.length !== 6) {
       setError("Kode verifikasi 6 digit harus diisi lengkap.");
       return;
@@ -252,19 +256,37 @@ export function useForgotPassword() {
       setError("Kode verifikasi sudah kedaluwarsa. Silakan kirim ulang kode.");
       return;
     }
+
+    setIsSubmitting(true);
     setError(null);
-    setStep("new-password");
-  }, [code, expiresIn]);
+
+    try {
+      // Panggil endpoint /auth/reset-password/verify untuk memvalidasi PIN 6 digit
+      const res = await authService.verifyResetCode(email, code);
+      setResetToken(res.reset_token);
+
+      // Sinkronkan batas waktu jika disediakan server
+      if (res.expires_in_seconds) {
+        const now = Date.now();
+        const expiresAt = now + res.expires_in_seconds * 1000;
+        expiresAtRef.current = expiresAt;
+        setExpiresIn(res.expires_in_seconds);
+      }
+
+      // PIN valid -> baru buka form ganti password baru!
+      setStep("new-password");
+    } catch (err) {
+      const errMsg = readApiError(err);
+      setError(errMsg);
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [code, email, expiresIn]);
 
   /**
-   * Phase 3: Validates replacement password and submits OTP + password to backend API.
+   * Phase 3: Validates replacement password and submits reset_token to backend API.
    */
   const handleResetPassword = useCallback(async () => {
-    if (code.length !== 6) {
-      setError("Kode verifikasi 6 digit tidak valid. Silakan verifikasi ulang kode.");
-      setStep("otp");
-      return;
-    }
     if (newPassword.length < 8) {
       setError("Kata sandi baru minimal 8 karakter.");
       return;
@@ -282,27 +304,34 @@ export function useForgotPassword() {
     setError(null);
 
     try {
-      await authService.resetPassword(email, code, newPassword);
+      if (resetToken) {
+        await authService.resetPassword(resetToken, newPassword);
+      } else {
+        await authService.resetPassword(email, code, newPassword);
+      }
       clearSession();
+      setResetToken(null);
       setStep("success");
     } catch (err) {
       const errMsg = readApiError(err);
       setError(errMsg);
-      // If error is code-related (invalid code, expired code, too many attempts), return to OTP screen
+      // Jika error terkait kode/token kadaluarsa, kembalikan ke layar OTP
       const lowerErr = errMsg.toLowerCase();
       if (
         lowerErr.includes("kode") ||
         lowerErr.includes("kedaluwarsa") ||
         lowerErr.includes("expired") ||
-        lowerErr.includes("percobaan")
+        lowerErr.includes("percobaan") ||
+        lowerErr.includes("token")
       ) {
         setCode("");
+        setResetToken(null);
         setStep("otp");
       }
     } finally {
       setIsSubmitting(false);
     }
-  }, [code, email, newPassword, confirmPassword]);
+  }, [resetToken, email, code, newPassword, confirmPassword]);
 
   /**
    * Re-dispatches a replacement OTP with backend cooldown enforcement.
@@ -325,6 +354,7 @@ export function useForgotPassword() {
       setExpiresIn(challenge.expires_in_seconds);
       setResendIn(challenge.resend_available_in_seconds);
       setCode("");
+      setResetToken(null);
 
       saveSession(email, expiresAt, resendAvailableAt);
     } catch (err) {
@@ -347,6 +377,7 @@ export function useForgotPassword() {
     resendAvailableAtRef.current = 0;
     setStep("email");
     setCode("");
+    setResetToken(null);
     setError(null);
     setEmailError(null);
   }, []);
@@ -356,6 +387,7 @@ export function useForgotPassword() {
    */
   const handleBackToOtp = useCallback(() => {
     setError(null);
+    setResetToken(null);
     setStep("otp");
   }, []);
 
@@ -363,6 +395,7 @@ export function useForgotPassword() {
     step,
     email,
     code,
+    resetToken,
     newPassword,
     confirmPassword,
     error,

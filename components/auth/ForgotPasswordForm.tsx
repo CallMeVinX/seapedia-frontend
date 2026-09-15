@@ -238,11 +238,11 @@ export default function ForgotPasswordForm() {
 
         <Button
           type="submit"
-          disabled={fp.code.length !== 6 || fp.isExpired}
-          icon={<ArrowRight className="h-4 w-4" aria-hidden="true" />}
+          disabled={fp.code.length !== 6 || fp.isExpired || fp.isSubmitting}
+          icon={!fp.isSubmitting ? <ArrowRight className="h-4 w-4" aria-hidden="true" /> : undefined}
           className="w-full"
         >
-          Lanjutkan ke Kata Sandi Baru
+          {fp.isSubmitting ? "Memverifikasi kode PIN..." : "Lanjutkan ke Kata Sandi Baru"}
         </Button>
 
         <div className="text-center text-sm text-gray-500">
